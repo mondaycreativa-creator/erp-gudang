@@ -1,0 +1,15 @@
+{
+    "name": "Lead",
+    "alias": "CRM",
+    "description": "",
+    "keywords": [],
+    "priority": 40,
+    "version":3.2,
+    "providers": [
+        "Modules\\Lead\\Providers\\LeadServiceProvider",
+        "Modules\\Lead\\Providers\\EventServiceProvider",
+        "Modules\\Lead\\Providers\\ViewComposer"
+    ],
+    "files": [],
+    "child_module": ["FormBuilder","HubSpot"]
+}

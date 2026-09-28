@@ -1,0 +1,25 @@
+{
+    "name": "Stripe",
+    "alias": "Stripe",
+    "description": "",
+    "keywords": [],
+    "priority": 1500,
+    "version": 3.0,
+    "providers": [
+        "Modules\\Stripe\\Providers\\StripeServiceProvider",
+        "Modules\\Stripe\\Providers\\ViewComposer",
+        "Modules\\Stripe\\Providers\\InvoicePayment",
+        "Modules\\Stripe\\Providers\\RetainerPayment",
+        "Modules\\Stripe\\Providers\\CoursePayment",
+        "Modules\\Stripe\\Providers\\HotelRoomBookingPayment",
+        "Modules\\Stripe\\Providers\\propertyInvoicePayment",
+        "Modules\\Stripe\\Providers\\VehicleBookingPayment",
+        "Modules\\Stripe\\Providers\\MembershipPlanPayment",
+        "Modules\\Stripe\\Providers\\BeautySpaSerivceProvider",
+        "Modules\\Stripe\\Providers\\ParkingSerivceProvider",
+        "Modules\\Stripe\\Providers\\ContentPayment",
+        "Modules\\Stripe\\Providers\\ParkingSerivceProvider",
+        "Modules\\Stripe\\Providers\\MovieShowBookingServiceProvider"
+    ],
+    "files": []
+}

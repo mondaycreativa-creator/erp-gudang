@@ -1,0 +1,14 @@
+{
+    "name": "Pos",
+    "alias": "POS",
+    "description": "",
+    "keywords": [],
+    "priority": 50,
+    "version":3.1,
+    "providers": [
+        "Modules\\Pos\\Providers\\PosServiceProvider",
+        "Modules\\Pos\\Providers\\EventServiceProvider",
+        "Modules\\Pos\\Providers\\VendorPurchase"
+    ],
+    "files": []
+}

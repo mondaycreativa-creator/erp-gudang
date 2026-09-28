@@ -1,0 +1,25 @@
+{
+    "name": "Paypal",
+    "alias": "PayPal",
+    "description": "",
+    "keywords": [],
+    "priority": 1510,
+    "version": 3.0,
+    "providers": [
+        "Modules\\Paypal\\Providers\\PaypalServiceProvider",
+        "Modules\\Paypal\\Providers\\ViewComposer",
+        "Modules\\Paypal\\Providers\\InvoicePayment",
+        "Modules\\Paypal\\Providers\\RetainerPayment",
+        "Modules\\Paypal\\Providers\\CoursePayment",
+        "Modules\\Paypal\\Providers\\HotelRoomBookingPayment",
+        "Modules\\Paypal\\Providers\\propertyInvoicePayment",
+        "Modules\\Paypal\\Providers\\VehicleBookingPayment",
+        "Modules\\Paypal\\Providers\\MembershipPlanPayment",
+        "Modules\\Paypal\\Providers\\BeautySpaSerivceProvider",
+        "Modules\\Paypal\\Providers\\ParkingSerivceProvider",
+        "Modules\\Paypal\\Providers\\ContentPayment",
+        "Modules\\Paypal\\Providers\\ParkingSerivceProvider",
+        "Modules\\Paypal\\Providers\\MovieShowBookingServiceProvider"
+    ],
+    "files": []
+}

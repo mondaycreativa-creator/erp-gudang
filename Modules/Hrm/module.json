@@ -1,0 +1,14 @@
+{
+    "name": "Hrm",
+    "alias": "HRM",
+    "description": "",
+    "keywords": [],
+    "priority": 30,
+    "version":3.5,
+    "providers": [
+        "Modules\\Hrm\\Providers\\HrmServiceProvider",
+        "Modules\\Hrm\\Providers\\BranchFields"
+    ],
+    "files": [],
+    "child_module": ["Performance", "Training"]
+}

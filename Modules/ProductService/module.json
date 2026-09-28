@@ -1,0 +1,15 @@
+{
+    "name": "ProductService",
+    "alias": "Product Service",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "version":3.0,
+    "providers": [
+        "Modules\\ProductService\\Providers\\ProductServiceServiceProvider",
+        "Modules\\ProductService\\Providers\\EventServiceProvider"
+    ],
+    "files": [],
+    "child_module": ["HubSpot"],
+    "display": false
+}

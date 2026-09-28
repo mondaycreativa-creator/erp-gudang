@@ -1,0 +1,26 @@
+{
+    "name": "workdo/stripe",
+    "description": "",
+    "authors": [
+        {
+            "name": "WorkDo",
+            "email": "support@workdo.io"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Stripe\\": ""
+        }
+    },
+    "require": {
+        "stripe/stripe-php": "^9.0"
+    }
+}

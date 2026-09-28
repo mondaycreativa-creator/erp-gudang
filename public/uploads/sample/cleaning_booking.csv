@@ -1,0 +1,4 @@
+type,customer_name,building_type,building_unit,address,description,booking_date,cleaning_date
+walk-in,John Smith,Office Building,Suite 301, 123 Main Street Anytown USA,Weekly cleaning service,2024-03-08,2024-03-12
+walk-in,Emily Johnson,Residential House,Apartment 2B, 456 Elm Street Springfield USA,Deep cleaning service,2024-03-10,2024-03-15
+walk-in,Michael Williams,Warehouse,Bay 7, 789 Oak Avenue Metropolis USA,Monthly maintenance cleaning,2024-03-12,2024-03-18

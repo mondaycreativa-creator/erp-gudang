@@ -1,0 +1,20 @@
+
+{
+    "name": "Account",
+    "alias": "Accounting",
+    "description": "",
+    "keywords": [],
+    "priority": 20,
+    "version":3.3,
+    "providers": [
+        "Modules\\Account\\Providers\\AccountServiceProvider",
+        "Modules\\Account\\Providers\\EventServiceProvider",
+        "Modules\\Account\\Providers\\InvoicePayment",
+        "Modules\\Account\\Providers\\RetainerPayment",
+        "Modules\\Account\\Providers\\ViewComposer"
+    ],
+    "files": [],
+    "child_module": ["Goal" , "Plaid" , "BudgetPlanner"],
+    "monthly_price": 10,
+    "yearly_price": 100
+}

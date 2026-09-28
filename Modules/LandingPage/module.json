@@ -1,0 +1,26 @@
+{
+    "name": "LandingPage",
+    "alias": "CMS",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "version":3.2,
+    "providers": [
+        "Modules\\LandingPage\\Providers\\LandingPageServiceProvider",
+        "Modules\\LandingPage\\Providers\\ViewComposer"
+    ],
+    "files": [],
+    "display": false
+}
+
+
+
+
+
+
+
+
+
+
+
+
