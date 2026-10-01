@@ -2,7 +2,6 @@
 /public/hot
 /public/storage
 /storage/*.key
-/vendor
 .env
 .env.backup
 .env.production
@@ -27,5 +26,6 @@ yarn-error.log
 /storage/logs/*
 !/storage/logs/.gitignore
 
-# Database dumps
+# Database dumps and archives
 *.sql
+*.zip
