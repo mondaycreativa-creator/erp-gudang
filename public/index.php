@@ -31,6 +31,53 @@ if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php'))
 |
 */
 
+// Auto-create .env if missing on server
+$envPath = __DIR__ . '/../.env';
+if (!file_exists($envPath)) {
+    $envContent = "APP_NAME=\"ERP Gudang\"\n"
+        . "APP_ENV=production\n"
+        . "APP_KEY=base64:CE9EXx7w7o2+j+zB/gYTRe5zIY7Rk6vyx4lTd9sSTi4=\n"
+        . "APP_DEBUG=true\n"
+        . "APP_URL=https://wikansaranaglobal.space\n\n"
+        . "LOG_CHANNEL=stack\n"
+        . "LOG_DEPRECATIONS_CHANNEL=null\n"
+        . "LOG_LEVEL=debug\n\n"
+        . "DB_CONNECTION=mysql\n"
+        . "DB_HOST=localhost\n"
+        . "DB_PORT=3306\n"
+        . "DB_DATABASE=wikq1718_erp\n"
+        . "DB_USERNAME=wikq1718_cikaluser\n"
+        . "DB_PASSWORD=cikalpassword\n\n"
+        . "BROADCAST_DRIVER=log\n"
+        . "CACHE_DRIVER=file\n"
+        . "FILESYSTEM_DISK=local\n"
+        . "QUEUE_CONNECTION=sync\n"
+        . "SESSION_DRIVER=file\n"
+        . "SESSION_LIFETIME=120\n";
+    @file_put_contents($envPath, $envContent);
+}
+
+// Auto-create modules_statuses.json if missing
+$modStatuses = __DIR__ . '/../storage/modules_statuses.json';
+if (!file_exists($modStatuses) && is_dir(__DIR__ . '/../storage')) {
+    @file_put_contents($modStatuses, '{"ProductService":true,"LandingPage":false,"Taskly":false,"Account":true,"Hrm":false,"Lead":false,"Pos":false,"Stripe":false,"Paypal":false}');
+}
+
+// Ensure critical storage directories exist
+$storageDirs = [
+    __DIR__ . '/../storage/app/public',
+    __DIR__ . '/../storage/framework/cache/data',
+    __DIR__ . '/../storage/framework/sessions',
+    __DIR__ . '/../storage/framework/views',
+    __DIR__ . '/../storage/logs',
+    __DIR__ . '/../bootstrap/cache',
+];
+foreach ($storageDirs as $dir) {
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0775, true);
+    }
+}
+
 // Ensure platform_check.php exists if missing
 $platformCheck = __DIR__ . '/../vendor/composer/platform_check.php';
 if (!file_exists($platformCheck) && is_dir(dirname($platformCheck))) {
