@@ -179,13 +179,8 @@ if (!function_exists('getSettingMenu')) {
     function getSettingMenu()
     {
         $user = auth()->user();
-        $role = $user->roles->first();
         $menu = new \App\Classes\Menu($user);
-        if ($role->name == 'super admin') {
-            event(new \App\Events\SuperAdminSettingMenuEvent($menu));
-        } else {
-            event(new \App\Events\CompanySettingMenuEvent($menu));
-        }
+        event(new \App\Events\CompanySettingMenuEvent($menu));
         return generateSettingMenu($menu->menu);
     }
 }
@@ -210,16 +205,9 @@ if (!function_exists('getSettings')) {
     function getSettings()
     {
         $user = auth()->user();
-        $role = $user->roles->first();
-        if ($role->name == 'super admin') {
-            $settings = getAdminAllSetting();
-            $html = new \App\Classes\Setting($user, $settings);
-            event(new \App\Events\SuperAdminSettingEvent($html));
-        } else {
-            $settings = getCompanyAllSetting();
-            $html = new \App\Classes\Setting($user, $settings);
-            event(new \App\Events\CompanySettingEvent($html));
-        }
+        $settings = getCompanyAllSetting();
+        $html = new \App\Classes\Setting($user, $settings);
+        event(new \App\Events\CompanySettingEvent($html));
         return generateSettings($html->html);
     }
 }

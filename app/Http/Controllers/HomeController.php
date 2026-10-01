@@ -61,6 +61,22 @@ class HomeController extends Controller
         {
             $user = auth()->user();
 
+            // Eliminate super admin role: ensure user always operates as company with active workspace
+            if ($user->type === 'super admin' || empty($user->active_workspace) || $user->active_workspace == 0) {
+                $workspace = \App\Models\WorkSpace::first();
+                $workspaceId = $workspace ? $workspace->id : 1;
+                $user->type = 'company';
+                $user->active_workspace = $workspaceId;
+                $user->workspace_id = $workspaceId;
+                $user->save();
+
+                $companyRole = \App\Models\Role::where('name', 'company')->first();
+                if ($companyRole && !$user->hasRole('company')) {
+                    $user->roles()->syncWithoutDetaching([$companyRole->id]);
+                }
+                \Illuminate\Support\Facades\Cache::forget('sidebar_menu_' . $user->id);
+            }
+
             $menu = new \App\Classes\Menu($user);
             event(new \App\Events\CompanyMenuEvent($menu));
             $menu_items = $menu->menu;
@@ -70,16 +86,21 @@ class HomeController extends Controller
 
             if ($dashboardItem) {
                 $route = isset($dashboardItem['route']) ? $dashboardItem['route'] : null;
-                if($route)
+                if($route && \Route::has($route))
                 {
                     return redirect()->route($route);
                 }
             }
+
+            if (\Route::has('warehouses.index')) {
+                return redirect()->route('warehouses.index');
+            }
+
             return view('dashboard');
         }
         else
         {
-            return redirect()->route('start');
+            return redirect()->route('login');
         }
     }
 

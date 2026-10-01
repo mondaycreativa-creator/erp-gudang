@@ -23,13 +23,7 @@ class SettingsController extends Controller
     public function getSettingSection($module, $method = 'index')
     {
         $folder = 'Company';
-        if (auth()->user()->type == 'super admin') {
-            $settings = getAdminAllSetting();
-
-            $folder = 'SuperAdmin';
-        } else {
-            $settings = getCompanyAllSetting();
-        }
+        $settings = getCompanyAllSetting();
 
         if (!empty($module) && $module != 'Base') {
             $controllerClass = "Modules\\" . $module . "\\Http\\Controllers\\" . $folder . "\\SettingsController";
