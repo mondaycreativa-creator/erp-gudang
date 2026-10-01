@@ -31,6 +31,12 @@ if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php'))
 |
 */
 
+// Ensure platform_check.php exists if missing
+$platformCheck = __DIR__ . '/../vendor/composer/platform_check.php';
+if (!file_exists($platformCheck) && is_dir(dirname($platformCheck))) {
+    @file_put_contents($platformCheck, "<?php // auto-generated\n");
+}
+
 require __DIR__.'/../vendor/autoload.php';
 
 /*
