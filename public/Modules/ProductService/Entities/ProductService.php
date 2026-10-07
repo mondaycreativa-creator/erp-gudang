@@ -43,7 +43,7 @@ class ProductService extends Model
 
     public function unit()
     {
-        return $this->hasOne('Modules\ProductService\Entities\Unit', 'id', 'unit_id')->first();
+        return $this->hasOne('Modules\ProductService\Entities\Unit', 'id', 'unit_id');
     }
 
     public function category()

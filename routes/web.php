@@ -30,6 +30,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\WarehouseTransferController;
 use App\Http\Controllers\WorkSpaceController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\MbgController;
 
 /*
 |--------------------------------------------------------------------------
@@ -311,6 +312,33 @@ Route::middleware(['auth','verified'])->group(function () {
         Route::get('reports-warehouses', [ReportController::class, 'warehouseReport'])->name('reports.warehouse')->middleware(['auth']);
         Route::get('reports-daily-purchases', [ReportController::class, 'purchaseDailyReport'])->name('reports.daily.purchase')->middleware(['auth']);
         Route::get('reports-monthly-purchases', [ReportController::class, 'purchaseMonthlyReport'])->name('reports.monthly.purchase')->middleware(['auth']);
+
+        // MBG SPPG Routes
+        Route::prefix('mbg')->name('mbg.')->middleware(['auth'])->group(function () {
+            // 1. Pengiriman Mingguan (Weekly Dispatch)
+            Route::get('dispatches', [MbgController::class, 'dispatches'])->name('dispatches.index');
+            Route::get('dispatches/create', [MbgController::class, 'createDispatch'])->name('dispatches.create');
+            Route::post('dispatches', [MbgController::class, 'storeDispatch'])->name('dispatches.store');
+            Route::get('dispatches/{id}', [MbgController::class, 'showDispatch'])->name('dispatches.show');
+            Route::delete('dispatches/{id}', [MbgController::class, 'destroyDispatch'])->name('dispatches.destroy');
+
+            // 2. Pemakaian Dapur SPPG & Barang Tambahan
+            Route::get('usages', [MbgController::class, 'usages'])->name('usages.index');
+            Route::get('usages/create', [MbgController::class, 'createUsage'])->name('usages.create');
+            Route::post('usages', [MbgController::class, 'storeUsage'])->name('usages.store');
+            Route::get('usages/{id}', [MbgController::class, 'showUsage'])->name('usages.show');
+
+            // 3. Rekap Tagihan Dapur & Cashback Koperasi
+            Route::get('billing', [MbgController::class, 'billing'])->name('billing.index');
+            Route::post('billing/{id}/payment', [MbgController::class, 'updatePayment'])->name('billing.payment');
+            Route::post('billing/{id}/cashback', [MbgController::class, 'updateCashback'])->name('billing.cashback');
+
+            // 4. Laporan Deadstock MBG
+            Route::get('deadstock', [MbgController::class, 'deadstock'])->name('deadstock.index');
+
+            // 5. Asisten Lapangan: Stok Koperasi
+            Route::get('lapangan/stock', [MbgController::class, 'koperasiStock'])->name('lapangan.stock');
+        });
 
     });
     // invoices template setting save

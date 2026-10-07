@@ -180,6 +180,86 @@ class CompanyMenuListener
             'permission' => 'report warehouse'
         ]);
 
+        // Operations: Modul SPPG MBG
+        $menu->add([
+            'category' => 'Operations',
+            'title' => __('SPPG MBG'),
+            'icon' => 'truck-delivery',
+            'name' => 'mbg-group',
+            'parent' => null,
+            'order' => 45,
+            'ignore_if' => [],
+            'depend_on' => [],
+            'route' => '',
+            'module' => $module,
+            'permission' => ''
+        ]);
+        $menu->add([
+            'category' => 'Operations',
+            'title' => __('Pengiriman Mingguan (Hari)'),
+            'icon' => '',
+            'name' => 'mbg-dispatch',
+            'parent' => 'mbg-group',
+            'order' => 10,
+            'ignore_if' => [],
+            'depend_on' => [],
+            'route' => 'mbg.dispatches.index',
+            'module' => $module,
+            'permission' => ''
+        ]);
+        $menu->add([
+            'category' => 'Operations',
+            'title' => __('Pemakaian Dapur SPPG'),
+            'icon' => '',
+            'name' => 'mbg-usage',
+            'parent' => 'mbg-group',
+            'order' => 20,
+            'ignore_if' => [],
+            'depend_on' => [],
+            'route' => 'mbg.usages.index',
+            'module' => $module,
+            'permission' => ''
+        ]);
+        $menu->add([
+            'category' => 'Operations',
+            'title' => __('Tagihan & Cashback Koperasi'),
+            'icon' => '',
+            'name' => 'mbg-billing',
+            'parent' => 'mbg-group',
+            'order' => 30,
+            'ignore_if' => [],
+            'depend_on' => [],
+            'route' => 'mbg.billing.index',
+            'module' => $module,
+            'permission' => ''
+        ]);
+        $menu->add([
+            'category' => 'Operations',
+            'title' => __('Laporan Deadstock MBG'),
+            'icon' => '',
+            'name' => 'mbg-deadstock',
+            'parent' => 'mbg-group',
+            'order' => 40,
+            'ignore_if' => [],
+            'depend_on' => [],
+            'route' => 'mbg.deadstock.index',
+            'module' => $module,
+            'permission' => ''
+        ]);
+        $menu->add([
+            'category' => 'Operations',
+            'title' => __('Stok Gudang Koperasi (Lapangan)'),
+            'icon' => '',
+            'name' => 'mbg-lapangan-stock',
+            'parent' => 'mbg-group',
+            'order' => 50,
+            'ignore_if' => [],
+            'depend_on' => [],
+            'route' => 'mbg.lapangan.stock',
+            'module' => $module,
+            'permission' => ''
+        ]);
+
         // Settings
         $menu->add([
             'category' => 'Settings',
