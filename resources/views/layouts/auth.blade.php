@@ -22,27 +22,27 @@
 
 <head>
 
-    <title>@yield('page-title') | {{ !empty($admin_settings['title_text']) ? $admin_settings['title_text'] : config('app.name', 'WorkDo') }}</title>
+    <title>@yield('page-title') | {{ !empty($admin_settings['title_text']) ? $admin_settings['title_text'] : config('app.name', 'Samakara') }}</title>
 
-    <meta name="title" content="{{ !empty($admin_settings['meta_title']) ? $admin_settings['meta_title'] : 'WOrkdo Dash' }}">
-    <meta name="keywords" content="{{ !empty($admin_settings['meta_keywords']) ? $admin_settings['meta_keywords'] : 'WorkDo Dash,SaaS solution,Multi-workspace' }}">
-    <meta name="description" content="{{ !empty($admin_settings['meta_description']) ? $admin_settings['meta_description'] : 'Discover the efficiency of Dash, a user-friendly web application by Rajodiya Apps.'}}">
+    <meta name="title" content="{{ !empty($admin_settings['meta_title']) ? $admin_settings['meta_title'] : 'Samakara - Sistem Aplikasi Manajemen Gudang & ERP Inventory' }}">
+    <meta name="keywords" content="{{ !empty($admin_settings['meta_keywords']) ? $admin_settings['meta_keywords'] : 'Samakara, aplikasi gudang, sistem manajemen gudang, warehouse management system, WMS, ERP gudang, stok barang, inventory, samakara.site' }}">
+    <meta name="description" content="{{ !empty($admin_settings['meta_description']) ? $admin_settings['meta_description'] : 'Samakara (samakara.site) - Solusi sistem aplikasi manajemen gudang dan ERP inventory modern. Kelola stok barang, pergudangan, rantai pasok, dan operasional bisnis secara efisien dan real-time.'}}">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ env('APP_URL') }}">
-    <meta property="og:title" content="{{ !empty($admin_settings['meta_title']) ? $admin_settings['meta_title'] : 'WOrkdo Dash' }}">
-    <meta property="og:description" content="{{ !empty($admin_settings['meta_description']) ? $admin_settings['meta_description'] : 'Discover the efficiency of Dash, a user-friendly web application by Rajodiya Apps.'}} ">
+    <meta property="og:title" content="{{ !empty($admin_settings['meta_title']) ? $admin_settings['meta_title'] : 'Samakara - Sistem Aplikasi Manajemen Gudang & ERP Inventory' }}">
+    <meta property="og:description" content="{{ !empty($admin_settings['meta_description']) ? $admin_settings['meta_description'] : 'Samakara (samakara.site) - Solusi sistem aplikasi manajemen gudang dan ERP inventory modern. Kelola stok barang, pergudangan, rantai pasok, dan operasional bisnis secara efisien dan real-time.'}} ">
     <meta property="og:image" content="{{ get_file( (!empty($admin_settings['meta_image'])) ? (check_file($admin_settings['meta_image'])) ?  $admin_settings['meta_image'] : 'uploads/meta/meta_image.png' : 'uploads/meta/meta_image.png'  ) }}{{'?'.time() }}">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="{{ env('APP_URL') }}">
-    <meta property="twitter:title" content="{{ !empty($admin_settings['meta_title']) ? $admin_settings['meta_title'] : 'WOrkdo Dash' }}">
-    <meta property="twitter:description" content="{{ !empty($admin_settings['meta_description']) ? $admin_settings['meta_description'] : 'Discover the efficiency of Dash, a user-friendly web application by Rajodiya Apps.'}} ">
+    <meta property="twitter:title" content="{{ !empty($admin_settings['meta_title']) ? $admin_settings['meta_title'] : 'Samakara - Sistem Aplikasi Manajemen Gudang & ERP Inventory' }}">
+    <meta property="twitter:description" content="{{ !empty($admin_settings['meta_description']) ? $admin_settings['meta_description'] : 'Samakara (samakara.site) - Solusi sistem aplikasi manajemen gudang dan ERP inventory modern. Kelola stok barang, pergudangan, rantai pasok, dan operasional bisnis secara efisien dan real-time.'}} ">
     <meta property="twitter:image" content="{{ get_file( (!empty($admin_settings['meta_image'])) ? (check_file($admin_settings['meta_image'])) ?  $admin_settings['meta_image'] : 'uploads/meta/meta_image.png' : 'uploads/meta/meta_image.png'  ) }}{{'?'.time() }}">
 
-    <meta name="author" content="Workdo.io">
+    <meta name="author" content="Samakara (samakara.site)">
 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
