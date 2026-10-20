@@ -111,10 +111,10 @@ class CompanyMenuListener
             'permission' => 'report purchase'
         ]);
 
-        // Operations: Stok Keluar (Invoice)
+        // Operations: Invoice
         $menu->add([
             'category' => 'Operations',
-            'title' => __('Stok Keluar (Invoice)'),
+            'title' => __('Invoice'),
             'icon' => 'file-invoice',
             'name' => 'invoice',
             'parent' => '',
