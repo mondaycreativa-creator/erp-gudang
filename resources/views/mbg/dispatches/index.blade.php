@@ -24,7 +24,7 @@
                 <div class="card-body p-3">
                     <form method="GET" action="{{ route('mbg.dispatches.index') }}">
                         <div class="row align-items-center">
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <label class="form-label text-muted small mb-1">{{ __('Gudang SPPG Tujuan') }}</label>
                                 <select name="to_warehouse_id" class="form-select form-select-sm">
                                     <option value="">-- Semua SPPG --</option>
@@ -37,22 +37,13 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-md-2">
+                            <div class="col-md-3">
                                 <label class="form-label text-muted small mb-1">{{ __('Hari Pengiriman') }}</label>
                                 <select name="delivery_day" class="form-select form-select-sm">
                                     <option value="">-- Semua Hari --</option>
                                     @foreach(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'] as $day)
                                         <option value="{{ $day }}" {{ request('delivery_day') == $day ? 'selected' : '' }}>{{ $day }}</option>
                                     @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label text-muted small mb-1">{{ __('Status Bayar') }}</label>
-                                <select name="payment_status" class="form-select form-select-sm">
-                                    <option value="">-- Semua Status --</option>
-                                    <option value="unpaid" {{ request('payment_status') == 'unpaid' ? 'selected' : '' }}>Belum Lunas</option>
-                                    <option value="partial" {{ request('payment_status') == 'partial' ? 'selected' : '' }}>Sebagian</option>
-                                    <option value="paid" {{ request('payment_status') == 'paid' ? 'selected' : '' }}>Lunas</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -80,18 +71,16 @@
                 <div class="card-body table-border-style">
                     <div class="table-responsive">
                         <table class="table mb-0 pc-dt-simple" id="mbg-dispatches-table">
-                            <thead>
+                            <thead class="table-light">
                             <tr>
-                                <th>{{ __('Kode') }}</th>
-                                <th>{{ __('Hari / Tanggal') }}</th>
-                                <th>{{ __('SPPG Tujuan') }}</th>
-                                <th>{{ __('Jml Bahan') }}</th>
-                                <th>{{ __('Tagihan Dapur (Rp)') }}</th>
-                                <th>{{ __('Modal Koperasi (Rp)') }}</th>
-                                <th>{{ __('Laba Kotor (Rp)') }}</th>
-                                <th>{{ __('Cashback (Rp)') }}</th>
-                                <th>{{ __('Status Bayar') }}</th>
-                                <th>{{ __('Aksi') }}</th>
+                                <th>{{ __('No. Surat Jalan') }}</th>
+                                <th>{{ __('Hari & Tanggal') }}</th>
+                                <th>{{ __('Gudang Asal') }}</th>
+                                <th>{{ __('SPPG Penerima') }}</th>
+                                <th>{{ __('Jenis Bahan') }}</th>
+                                <th>{{ __('Total Nilai Transfer') }}</th>
+                                <th>{{ __('Catatan') }}</th>
+                                <th class="text-center">{{ __('Aksi') }}</th>
                             </tr>
                             </thead>
                             <tbody>
@@ -107,30 +96,24 @@
                                         {{ \Carbon\Carbon::parse($dispatch->delivery_date)->format('d M Y') }}
                                     </td>
                                     <td>
+                                        <span class="badge bg-light text-dark border">
+                                            {{ $dispatch->fromWarehouse ? $dispatch->fromWarehouse->name : 'Gudang Pusat' }}
+                                        </span>
+                                    </td>
+                                    <td>
                                         <span class="badge bg-info text-white">
                                             {{ $dispatch->toWarehouse ? $dispatch->toWarehouse->name : '-' }}
                                         </span>
                                     </td>
                                     <td>{{ $dispatch->items->count() }} macam</td>
-                                    <td class="fw-bold">Rp {{ number_format($dispatch->total_price, 0, ',', '.') }}</td>
-                                    <td class="text-muted">Rp {{ number_format($dispatch->total_cost, 0, ',', '.') }}</td>
-                                    <td class="text-success fw-bold">Rp {{ number_format($dispatch->gross_profit, 0, ',', '.') }}</td>
-                                    <td class="text-warning fw-bold">Rp {{ number_format($dispatch->cashback_amount, 0, ',', '.') }}</td>
-                                    <td>
-                                        @if($dispatch->payment_status == 'paid')
-                                            <span class="badge bg-success">Lunas</span>
-                                        @elseif($dispatch->payment_status == 'partial')
-                                            <span class="badge bg-warning text-dark">Sebagian</span>
-                                        @else
-                                            <span class="badge bg-danger">Belum Lunas</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-1">
-                                            <a href="{{ route('mbg.dispatches.show', $dispatch->id) }}" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" title="{{ __('Surat Jalan / Rincian') }}">
-                                                <i class="ti ti-eye"></i>
+                                    <td class="fw-bold text-primary">Rp {{ number_format($dispatch->total_cost, 0, ',', '.') }}</td>
+                                    <td class="text-muted small">{{ $dispatch->notes ?: '-' }}</td>
+                                    <td class="text-center">
+                                        <div class="d-flex align-items-center justify-content-center gap-1">
+                                            <a href="{{ route('mbg.dispatches.show', $dispatch->id) }}" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" title="{{ __('Lihat Surat Jalan') }}">
+                                                <i class="ti ti-eye"></i> Surat Jalan
                                             </a>
-                                            <form method="POST" action="{{ route('mbg.dispatches.destroy', $dispatch->id) }}" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pengiriman ini? Stok akan dikembalikan ke gudang asal.');">
+                                            <form method="POST" action="{{ route('mbg.dispatches.destroy', $dispatch->id) }}" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan pengiriman ini? Stok akan dikembalikan ke Gudang Pusat.');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="{{ __('Batalkan & Hapus') }}">

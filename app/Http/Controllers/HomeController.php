@@ -9,6 +9,13 @@ use Illuminate\Support\Facades\DB;
 use Nwidart\Modules\Facades\Module;
 use Illuminate\Support\Facades\File;
 
+use App\Models\Warehouse;
+use App\Models\WarehouseProduct;
+use App\Models\MbgDispatch;
+use App\Models\MbgKitchenUsage;
+use App\Models\Purchase;
+use Modules\ProductService\Entities\ProductService;
+
 class HomeController extends Controller
 {
     /**
@@ -32,25 +39,6 @@ class HomeController extends Controller
             else
             {
                 return redirect()->route('login');
-
-                /*
-                // Halaman beranda sebelumnya (disembunyikan, file template tetap ada):
-                if(admin_setting('landing_page') == 'on')
-                {
-                    if(module_is_active('LandingPage'))
-                    {
-                        return view('landingpage::layouts.landingpage');
-                    }
-                    else
-                    {
-                        return view('marketplace.landing');
-                    }
-                }
-                else
-                {
-                    return redirect('login');
-                }
-                */
             }
         }
     }
@@ -77,26 +65,109 @@ class HomeController extends Controller
                 \Illuminate\Support\Facades\Cache::forget('sidebar_menu_' . $user->id);
             }
 
-            $menu = new \App\Classes\Menu($user);
-            event(new \App\Events\CompanyMenuEvent($menu));
-            $menu_items = $menu->menu;
-            $dashboardItem = collect($menu_items)->first(function ($item) {
-                return $item['parent'] === 'dashboard';
+            $workspace = getActiveWorkSpace();
+            $warehouses = Warehouse::where('workspace', $workspace)->get();
+            $pusat = $warehouses->first(function($w) {
+                return str_contains(strtolower($w->name), 'pusat') || str_contains(strtolower($w->name), 'koperasi') || $w->id == 1;
+            }) ?? $warehouses->first();
+
+            $sppgWarehouses = $warehouses->filter(function($w) use ($pusat) {
+                return $pusat ? $w->id != $pusat->id : true;
             });
 
-            if ($dashboardItem) {
-                $route = isset($dashboardItem['route']) ? $dashboardItem['route'] : null;
-                if($route && \Route::has($route))
-                {
-                    return redirect()->route($route);
+            $products = ProductService::where('workspace_id', $workspace)->with(['unit', 'category'])->get();
+
+            $whStocks = WarehouseProduct::whereIn('warehouse_id', $warehouses->pluck('id'))
+                ->get()
+                ->groupBy('product_id');
+
+            $productMatrix = [];
+            $totalAssetAll = 0;
+            $totalAssetPusat = 0;
+            $sppgAssetTotals = [];
+            foreach ($sppgWarehouses as $swh) {
+                $sppgAssetTotals[$swh->id] = 0;
+            }
+
+            foreach ($products as $p) {
+                $stockPusat = isset($whStocks[$p->id]) ? ($whStocks[$p->id]->firstWhere('warehouse_id', $pusat ? $pusat->id : 1)->quantity ?? 0) : 0;
+                $assetPusat = $stockPusat * ($p->purchase_price ?? 0);
+                $totalAssetPusat += $assetPusat;
+
+                $sppgStocks = [];
+                $totalStock = $stockPusat;
+
+                foreach ($sppgWarehouses as $swh) {
+                    $qty = isset($whStocks[$p->id]) ? ($whStocks[$p->id]->firstWhere('warehouse_id', $swh->id)->quantity ?? 0) : 0;
+                    $sppgStocks[$swh->id] = $qty;
+                    $totalStock += $qty;
+                    $sppgAssetTotals[$swh->id] += ($qty * ($p->purchase_price ?? 0));
+                }
+
+                $assetTotal = $totalStock * ($p->purchase_price ?? 0);
+                $totalAssetAll += $assetTotal;
+
+                $productMatrix[] = (object) [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'sku' => $p->sku,
+                    'category' => $p->category ? $p->category->name : '-',
+                    'unit' => $p->unit ? $p->unit->name : 'Unit',
+                    'purchase_price' => $p->purchase_price ?? 0,
+                    'stock_pusat' => $stockPusat,
+                    'sppg_stocks' => $sppgStocks,
+                    'total_stock' => $totalStock,
+                    'total_asset' => $assetTotal,
+                ];
+            }
+
+            // Total purchases this month (Rp)
+            $totalPurchasesMonth = 0;
+            if (\Schema::hasTable('purchases')) {
+                $purchases = Purchase::where('workspace', $workspace)
+                    ->whereMonth('purchase_date', date('m'))
+                    ->whereYear('purchase_date', date('Y'))
+                    ->with('items')
+                    ->get();
+                foreach ($purchases as $pur) {
+                    $totalPurchasesMonth += $pur->getTotal();
                 }
             }
 
-            if (\Route::has('warehouses.index')) {
-                return redirect()->route('warehouses.index');
+            // Total usage in SPPGs this month (Rp)
+            $totalUsageMonth = 0;
+            $usagesMonth = MbgKitchenUsage::where('workspace', $workspace)
+                ->whereMonth('usage_date', date('m'))
+                ->whereYear('usage_date', date('Y'))
+                ->with('items.product')
+                ->get();
+            foreach ($usagesMonth as $us) {
+                foreach ($us->items as $it) {
+                    if ($it->product) {
+                        $totalUsageMonth += ($it->quantity * $it->product->purchase_price);
+                    }
+                    $totalUsageMonth += ($it->additional_cost ?? 0);
+                }
             }
 
-            return view('dashboard');
+            $recentDispatches = MbgDispatch::where('workspace', $workspace)
+                ->with(['fromWarehouse', 'toWarehouse'])
+                ->orderBy('delivery_date', 'desc')
+                ->limit(5)
+                ->get();
+
+            $recentUsages = MbgKitchenUsage::where('workspace', $workspace)
+                ->with(['warehouse'])
+                ->orderBy('usage_date', 'desc')
+                ->limit(5)
+                ->get();
+
+            return view('dashboard', compact(
+                'warehouses', 'pusat', 'sppgWarehouses',
+                'productMatrix', 'totalAssetAll', 'totalAssetPusat',
+                'sppgAssetTotals', 'totalPurchasesMonth',
+                'totalUsageMonth', 'recentDispatches', 'recentUsages'
+            ));
         }
         else
         {

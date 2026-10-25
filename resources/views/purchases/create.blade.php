@@ -399,119 +399,52 @@
                 <div class="card-body">
                     <div class="row">
 
-                        <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
-                            <div class="row" id="vender-box">
-                                <div class="form-group col-md-6" id="account-box">
-                                    <label class="require form-label">{{ __('Account Type') }}</label>
-                                    <select class="form-control account_type {{ !empty($errors->first('account_type')) ? 'is-invalid' : '' }}"
-                                        name="account_type" required="" id="account_type">
-                                        <option value="">{{ __('Select Account Type') }}</option>
-                                        @if (module_is_active('Account'))
-                                        <option value="Accounting">{{ __('Accounting') }}</option>
-                                        @endif
-                                        @if (module_is_active('Taskly'))
-                                        <option value="Projects">{{ __('Projects') }}</option>
-                                        @endif
-                                        @if (module_is_active('CMMS'))
-                                        <option value="CMMS">{{ __('CMMS') }}</option>
-                                        @endif
-                                    </select>
-                                    <p class="text-danger d-none" id="account_validation">{{ __('Account Type field is required.') }}</p>
-                                </div>
-                                <div class="form-group col-md-6">
-                                  @if (module_is_active('Account'))
-                                        <div class="form-group" >
-                                            {{ Form::label('vender_id', __('Vendor'), ['class' => 'form-label']) }}
-                                            {{ Form::select('vender_id', $venders, $vendorId, ['class' => 'form-control select', 'id' => 'vender', 'data-url' => route('purchases.vender'), 'required' => 'required']) }}
+                        <!-- Hidden ERP Defaults to prevent user confusion -->
+                        <input type="hidden" name="account_type" value="Accounting">
+                        <input type="hidden" name="purchase_type" value="product">
 
-                                            @if (empty($venders->count()))
-                                            <div class=" text-xs">
-                                                {{ __('Please create vendor/Client first.') }}
-                                                <a
-                                                    @if (module_is_active('Account')) href="{{ route('vendors.index') }}"  @else href="{{ route('users.index') }}" @endif><b>{{ __('Create vendor/Client') }}</b></a>
-                                            </div>
-                                        @endif
-                                        </div>
-
-                                    @else
-                                        <div class="form-group">
-                                            {{ Form::label('vender_name', __('Vendor'), ['class' => 'form-label']) }}
-                                            {{ Form::text('vender_name', null, ['class' => 'form-control  ', 'placeholder' => 'Enter vender name', 'required' => 'required']) }}
-                                        </div>
-                                    @endif
+                        <div class="col-md-6">
+                            <div class="card bg-light border-0 p-3 mb-3">
+                                <h6 class="text-primary mb-3"><i class="ti ti-truck me-1"></i> Data Pemasok & Lokasi Penerima</h6>
+                                <div class="row">
+                                    <div class="form-group col-md-12 mb-3">
+                                        {{ Form::label('vender_id', __('Supplier / Pemasok'), ['class' => 'form-label fw-bold']) }}
+                                        {{ Form::select('vender_id', $venders, $vendorId ?: 8, ['class' => 'form-control select', 'id' => 'vender', 'data-url' => route('purchases.vender'), 'required' => 'required']) }}
+                                        <small class="text-muted">Pilih supplier / petani / sumber pembelian barang.</small>
+                                    </div>
+                                    <div class="form-group col-md-12 mb-0">
+                                        {{ Form::label('warehouse_id', __('Gudang Penerima (Stok Masuk)'), ['class' => 'form-label fw-bold']) }}
+                                        {{ Form::select('warehouse_id', $warehouse, 1, ['class' => 'form-control select', 'required' => 'required']) }}
+                                        <small class="text-muted">Barang yang dibeli akan langsung masuk & menambah stok di <b>Gudang Pusat</b>.</small>
+                                    </div>
                                 </div>
-                            </div>
-                            <div id="vender_detail" class="d-none">
                             </div>
                         </div>
 
                         <div class="col-md-6">
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <div class="form-group col-md-6">
-                                            <label class="require form-label">{{ __('Billing Type') }}</label>
-                                            <select
-                                                class="form-control {{ !empty($errors->first('Billing Type')) ? 'is-invalid' : '' }}"
-                                                name="purchase_type" required="" id="billing_type">
-                                                @if (module_is_active('Account'))
-                                                <option value="product">{{ __('Item Wise') }}</option>
-                                                @endif
-                                                @if (module_is_active('Taskly'))
-                                                <option value="project">{{ __('Project Wise') }}</option>
-                                                @endif
-                                                @if (module_is_active('CMMS'))
-                                                <option value="parts">{{ __('Parts Wise') }}</option>
-                                                @endif
-                                            </select>
-                                            <div class="invalid-feedback">
-                                                {{ $errors->first('billing_type') }}
-                                            </div>
+                            <div class="card bg-light border-0 p-3 mb-3">
+                                <h6 class="text-primary mb-3"><i class="ti ti-calendar me-1"></i> Informasi Bukti Masuk</h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-group">
+                                            {{ Form::label('category_id', __('Kategori Bahan'), ['class' => 'form-label fw-bold']) }}
+                                            {{ Form::select('category_id', $category, 1, ['class' => 'form-control select', 'required' => 'required']) }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <div class="form-group">
+                                            {{ Form::label('purchase_date', __('Tanggal Barang Masuk'), ['class' => 'form-label fw-bold']) }}
+                                            {{ Form::date('purchase_date', date('Y-m-d'), ['class' => 'form-control', 'required' => 'required']) }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12 mb-0">
+                                        <div class="form-group">
+                                            {{ Form::label('purchase_number', __('Nomor Transaksi Pembelian'), ['class' => 'form-label fw-bold']) }}
+                                            <input type="text" class="form-control" value="{{ $purchase_number }}" readonly>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="col-lg-6 col-12">
-                                    <div class="form-group">
-                                        {{ Form::label('warehouse_id', __('Warehouse'), ['class' => 'form-label']) }}
-                                        {{ Form::select('warehouse_id', $warehouse, null, ['class' => 'form-control select', 'required' => 'required']) }}
-                                    </div>
-                                </div>
-                                <div class="col-lg-6 col-12">
-                                    <div class="form-group">
-                                        {{ Form::label('category_id', __('Category'), ['class' => 'form-label']) }}
-                                        {{ Form::select('category_id', $category, null, ['class' => 'form-control select', 'required' => 'required']) }}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-lg-6 col-12">
-                                    <div class="form-group">
-                                        {{ Form::label('purchase_date', __('Purchase Date'), ['class' => 'form-label']) }}
-                                        {{ Form::date('purchase_date', date('Y-m-d'), ['class' => 'form-control ', 'required' => 'required']) }}
-
-                                    </div>
-                                </div>
-
-                                <div class="col-lg-6 col-12">
-                                    <div class="form-group">
-                                        {{ Form::label('purchase_number', __('Purchase Number'), ['class' => 'form-label']) }}
-                                        <input type="text" class="form-control" value="{{ $purchase_number }}" readonly>
-
-                                    </div>
-                                </div>
-
-                                @if (module_is_active('CustomField') && !$customFields->isEmpty())
-                                    <div class="col-md-12 form-group">
-                                        <div class="tab-pane fade show form-label" id="tab-2" role="tabpanel">
-                                            @include('customfield::formBuilder')
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-
-
                         </div>
                     </div>
                 </div>
@@ -536,123 +469,76 @@
                 </div>
                 <div class="card-body table-border-style">
                     <div class="table-responsive">
-                        <table class="table mb-0" data-repeater-list="items" id="sortable-table">
-                            <thead>
+                        <table class="table table-bordered mb-0" data-repeater-list="items" id="sortable-table">
+                            <thead class="table-light">
                                 <tr>
-                                    <th>{{ __('Item Type') }}</th>
-                                    <th>{{ __('Items') }}</th>
-                                    <th>{{ __('Quantity') }}</th>
-                                    <th>{{ __('Price') }} </th>
-                                    <th>{{ __('Tax') }} (%)</th>
-                                    <th>{{ __('Discount') }}</th>
-                                    <th class="text-end">{{ __('Amount') }} <br><small
-                                            class="text-danger font-weight-bold">{{ __('After discount & tax') }}</small>
-                                    </th>
-                                    <th></th>
+                                    <th style="width: 45%;">{{ __('Nama Bahan / Produk') }}</th>
+                                    <th style="width: 15%;">{{ __('Jumlah Masuk (Qty)') }}</th>
+                                    <th style="width: 20%;">{{ __('Harga Beli Satuan') }} ({{ $currancy_symbol }})</th>
+                                    <th style="width: 15%;" class="text-end">{{ __('Subtotal') }} ({{ $currancy_symbol }})</th>
+                                    <th style="width: 5%;" class="text-center">{{ __('Hapus') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="ui-sortable" data-repeater-item>
                                 <tr>
-                                    <td class="form-group pt-0">
-                                        {{ Form::select('product_type', $product_type, null, ['class' => 'form-control product_type ', 'required' => 'required', 'placeholder' => '--']) }}
-                                    </td>
-                                    <td width="25%" class="form-group pt-0 product_div">
-                                        <select name="item" class="form-control product_id item  js-searchBox"
+                                    <td class="form-group pt-2 product_div">
+                                        <input type="hidden" name="product_type" value="product">
+                                        <select name="item" class="form-control product_id item js-searchBox"
                                             data-url="{{ route('purchases.product') }}" required>
                                             @foreach ($product_services as $key => $product_service)
                                                 <option value="{{ $key }}">{{ $product_service }}</option>
                                             @endforeach
                                         </select>
                                     </td>
-                                    <td>
-                                        <div class="form-group price-input input-group search-form">
-                                            {{ Form::text('quantity', '', ['class' => 'form-control quantity', 'required' => 'required', 'placeholder' => __('Qty'), 'required' => 'required']) }}
-
+                                    <td class="pt-2">
+                                        <div class="form-group price-input input-group search-form mb-0">
+                                            {{ Form::text('quantity', '', ['class' => 'form-control quantity', 'required' => 'required', 'placeholder' => __('Qty')]) }}
                                             <span class="unit input-group-text bg-transparent"></span>
                                         </div>
                                     </td>
-                                    <td>
-                                        <div class="form-group price-input input-group search-form">
-                                            {{ Form::text('price', '', ['class' => 'form-control price', 'required' => 'required', 'placeholder' => __('Price'), 'required' => 'required']) }}
+                                    <td class="pt-2">
+                                        <div class="form-group price-input input-group search-form mb-0">
+                                            {{ Form::text('price', '', ['class' => 'form-control price', 'required' => 'required', 'placeholder' => __('Harga')]) }}
                                             <span class="input-group-text bg-transparent">{{ $currancy_symbol }}</span>
                                         </div>
+                                        <!-- Hidden Tax & Discount for streamlined experience -->
+                                        <input type="hidden" name="discount" value="0" class="discount">
+                                        <input type="hidden" name="tax" value="" class="tax">
+                                        <input type="hidden" name="itemTaxPrice" value="0" class="itemTaxPrice">
+                                        <input type="hidden" name="itemTaxRate" value="0" class="itemTaxRate">
                                     </td>
-                                    <td>
-                                        <div class="form-group">
-                                            <div class="input-group">
-                                                <div class="taxes"></div>
-                                                {{ Form::hidden('tax', '', ['class' => 'form-control tax']) }}
-                                                {{ Form::hidden('itemTaxPrice', '', ['class' => 'form-control itemTaxPrice']) }}
-                                                {{ Form::hidden('itemTaxRate', '', ['class' => 'form-control itemTaxRate']) }}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="form-group price-input input-group search-form">
-                                            {{ Form::text('discount', '', ['class' => 'form-control discount', 'required' => 'required', 'placeholder' => __('Discount')]) }}
-                                            <span class="input-group-text bg-transparent">{{ $currancy_symbol }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="text-end amount">
+                                    <td class="text-end fw-bold pt-3 fs-6 amount">
                                         0.00
                                     </td>
-                                    <td>
+                                    <td class="text-center pt-2">
                                         <a href="#" class="bs-pass-para repeater-action-btn" data-repeater-delete>
                                             <div class="repeater-action-btn action-btn bg-danger ms-2">
-                                                <i class="ti ti-trash text-white text-white"></i>
+                                                <i class="ti ti-trash text-white"></i>
                                             </div>
                                         </a>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td colspan="2">
-                                        <div class="form-group">
-                                            {{ Form::textarea('description', null, ['class' => 'form-control pro_description', 'rows' => '2', 'placeholder' => __('Description')]) }}
+                                    <td colspan="2" class="border-top-0 pt-0">
+                                        <div class="form-group mb-1">
+                                            {{ Form::text('description', null, ['class' => 'form-control form-control-sm pro_description', 'placeholder' => __('Catatan item (opsional)')]) }}
                                         </div>
                                     </td>
-                                    <td colspan="5"></td>
+                                    <td colspan="3" class="border-top-0 pt-0"></td>
                                 </tr>
                             </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
-                                    <td></td>
-                                    <td><strong>{{ __('Sub Total') }} ({{ $currancy_symbol }})</strong></td>
-                                    <td class="text-end subTotal">0.00</td>
-                                    <td></td>
+                            <tfoot class="table-light">
+                                <tr style="display: none;">
+                                    <td colspan="3"></td>
+                                    <td class="subTotal">0.00</td>
+                                    <td class="totalDiscount">0.00</td>
+                                    <td class="totalTax">0.00</td>
                                 </tr>
                                 <tr>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
-                                    <td></td>
-                                    <td><strong>{{ __('Discount') }} ({{ $currancy_symbol }})</strong></td>
-                                    <td class="text-end totalDiscount">0.00</td>
-                                    <td></td>
-                                </tr>
-                                <tr>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
-                                    <td></td>
-                                    <td><strong>{{ __('Tax') }} ({{ $currancy_symbol }})</strong></td>
-                                    <td class="text-end totalTax">0.00</td>
-                                    <td></td>
-                                </tr>
-                                <tr>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
-                                    <td>&nbsp;</td>
-                                    <td class="blue-text"><strong>{{ __('Total Amount') }}
-                                            ({{ $currancy_symbol }})</strong></td>
-                                    <td class="blue-text text-end totalAmount"></td>
+                                    <td colspan="3" class="text-end fw-bold fs-6">{{ __('Total Pembelian Barang:') }}</td>
+                                    <td class="text-end fw-bold text-primary fs-5">
+                                        {{ $currancy_symbol }} <span class="totalAmount">0.00</span>
+                                    </td>
                                     <td></td>
                                 </tr>
                             </tfoot>

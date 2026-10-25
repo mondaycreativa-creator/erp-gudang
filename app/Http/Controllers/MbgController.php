@@ -65,8 +65,11 @@ class MbgController extends Controller
     public function createDispatch()
     {
         $workspace = getActiveWorkSpace();
-        $koperasiWarehouse = Warehouse::where('workspace', $workspace)->where('name', 'like', '%Koperasi%')->first()
-            ?? Warehouse::where('workspace', $workspace)->first();
+        $koperasiWarehouse = Warehouse::where('workspace', $workspace)
+            ->where(function($q) {
+                $q->where('name', 'like', '%Pusat%')
+                  ->orWhere('name', 'like', '%Koperasi%');
+            })->first() ?? Warehouse::where('workspace', $workspace)->first();
 
         $sppgWarehouses = Warehouse::where('workspace', $workspace)
             ->where('id', '!=', $koperasiWarehouse ? $koperasiWarehouse->id : 0)
@@ -252,8 +255,14 @@ class MbgController extends Controller
         }
 
         $usages = $query->orderBy('usage_date', 'desc')->get();
+        $pusatWarehouse = Warehouse::where('workspace', $workspace)
+            ->where(function($q) {
+                $q->where('name', 'like', '%Pusat%')
+                  ->orWhere('name', 'like', '%Koperasi%');
+            })->first();
+
         $warehouses = Warehouse::where('workspace', $workspace)
-            ->where('name', 'like', '%SPPG%')
+            ->where('id', '!=', $pusatWarehouse ? $pusatWarehouse->id : 0)
             ->get();
 
         return view('mbg.usages.index', compact('usages', 'warehouses', 'userWhId'));
@@ -267,8 +276,14 @@ class MbgController extends Controller
         if ($userWhId) {
             $sppgWarehouses = Warehouse::where('id', $userWhId)->get();
         } else {
+            $pusatWarehouse = Warehouse::where('workspace', $workspace)
+                ->where(function($q) {
+                    $q->where('name', 'like', '%Pusat%')
+                      ->orWhere('name', 'like', '%Koperasi%');
+                })->first();
+
             $sppgWarehouses = Warehouse::where('workspace', $workspace)
-                ->where('name', 'like', '%SPPG%')
+                ->where('id', '!=', $pusatWarehouse ? $pusatWarehouse->id : 0)
                 ->get();
         }
 

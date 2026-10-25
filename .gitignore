@@ -29,3 +29,9 @@ yarn-error.log
 # Database dumps and archives
 *.sql
 *.zip
+
+# Temporary directories and generated docs
+/output/
+/tmp/
+*.pdf
+panduan_operasional.html

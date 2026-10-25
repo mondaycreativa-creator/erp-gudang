@@ -23,13 +23,13 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-3">
-                            <label class="form-label fw-bold">{{ __('Gudang Asal (Koperasi)') }} <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold">{{ __('Gudang Asal (Pusat)') }} <span class="text-danger">*</span></label>
                             <select name="from_warehouse_id" class="form-select" required>
                                 @if($koperasiWarehouse)
                                     <option value="{{ $koperasiWarehouse->id }}">{{ $koperasiWarehouse->name }}</option>
                                 @endif
                             </select>
-                            <small class="text-muted">Stok akan dipotong dari gudang koperasi ini.</small>
+                            <small class="text-muted">Stok akan dipotong dari Gudang Pusat.</small>
                         </div>
 
                         <div class="col-md-3">
@@ -40,10 +40,10 @@
                                     <option value="{{ $wh->id }}">{{ $wh->name }}</option>
                                 @endforeach
                             </select>
-                            <small class="text-muted">Stok akan bertambah di dapur SPPG ini.</small>
+                            <small class="text-muted">Stok akan bertambah di Gudang SPPG ini.</small>
                         </div>
 
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <label class="form-label fw-bold">{{ __('Jadwal Hari') }} <span class="text-danger">*</span></label>
                             <select name="delivery_day" class="form-select" required>
                                 @foreach($days as $day)
@@ -52,19 +52,17 @@
                             </select>
                         </div>
 
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <label class="form-label fw-bold">{{ __('Tanggal Kirim') }} <span class="text-danger">*</span></label>
                             <input type="date" name="delivery_date" class="form-control" value="{{ date('Y-m-d') }}" required>
                         </div>
 
-                        <div class="col-md-2">
-                            <label class="form-label fw-bold">{{ __('Cashback Koperasi (%)') }}</label>
-                            <input type="number" step="0.1" name="cashback_percent" id="cashback_percent" class="form-control" value="0" placeholder="Contoh: 2">
-                        </div>
+                        <!-- Internal transfer: Cashback 0 -->
+                        <input type="hidden" name="cashback_percent" value="0">
 
                         <div class="col-12">
-                            <label class="form-label text-muted">{{ __('Catatan Pengiriman') }}</label>
-                            <input type="text" name="notes" class="form-control" placeholder="Contoh: Pengiriman stok kebutuhan menu Senin (Sop Ayam & Telur Rebus)">
+                            <label class="form-label text-muted">{{ __('Catatan Pengiriman / No. Surat Jalan') }}</label>
+                            <input type="text" name="notes" class="form-control" placeholder="Contoh: Distribusi bahan operasional dapur / pakan harian">
                         </div>
                     </div>
                 </div>
@@ -74,7 +72,7 @@
             <div class="card mb-3">
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 text-primary">
-                        <i class="ti ti-salad me-1"></i> {{ __('Rincian Bahan & Qty yang Dikirim') }}
+                        <i class="ti ti-truck me-1"></i> {{ __('Rincian Bahan & Jumlah yang Didistribusikan') }}
                     </h5>
                     <button type="button" class="btn btn-sm btn-success" id="btn-add-row">
                         <i class="ti ti-plus"></i> {{ __('Tambah Baris Bahan') }}
@@ -85,13 +83,12 @@
                         <table class="table table-bordered mb-0" id="items-table">
                             <thead class="table-light">
                             <tr>
-                                <th style="width: 32%;">{{ __('Nama Bahan / Produk') }}</th>
-                                <th style="width: 12%;">{{ __('Stok Gudang') }}</th>
-                                <th style="width: 14%;">{{ __('Jumlah Kirim (Qty)') }}</th>
-                                <th style="width: 14%;">{{ __('Harga Modal (Rp)') }}</th>
-                                <th style="width: 14%;">{{ __('Harga Jual (Rp)') }}</th>
-                                <th style="width: 14%;">{{ __('Subtotal Jual (Rp)') }}</th>
-                                <th style="width: 4%;" class="text-center">{{ __('Hapus') }}</th>
+                                <th style="width: 38%;">{{ __('Nama Bahan / Produk') }}</th>
+                                <th style="width: 15%;">{{ __('Stok Pusat') }}</th>
+                                <th style="width: 17%;">{{ __('Jumlah Kirim (Qty)') }}</th>
+                                <th style="width: 15%;">{{ __('Nilai Satuan (Rp)') }}</th>
+                                <th style="width: 15%;">{{ __('Subtotal Nilai (Rp)') }}</th>
+                                <th style="width: 5%;" class="text-center">{{ __('Hapus') }}</th>
                             </tr>
                             </thead>
                             <tbody id="items-body">
@@ -102,21 +99,15 @@
                 </div>
                 <div class="card-footer bg-light p-3">
                     <div class="row align-items-center">
-                        <div class="col-md-3">
-                            <span class="text-muted d-block small">Total Bahan Dikirim:</span>
-                            <span class="fs-5 fw-bold" id="txt-total-items">0 Macam</span>
+                        <div class="col-md-6">
+                            <span class="text-muted d-block small">Total Jenis Bahan yang Dikirim:</span>
+                            <span class="fs-5 fw-bold text-dark" id="txt-total-items">0 Macam</span>
                         </div>
-                        <div class="col-md-3">
-                            <span class="text-muted d-block small">Total Modal Koperasi (HPP):</span>
-                            <span class="fs-5 fw-bold text-muted" id="txt-total-cost">Rp 0</span>
-                        </div>
-                        <div class="col-md-3">
-                            <span class="text-muted d-block small">Total Tagihan ke Dapur (Omzet):</span>
-                            <span class="fs-4 fw-bold text-primary" id="txt-total-price">Rp 0</span>
-                        </div>
-                        <div class="col-md-3 text-end">
-                            <span class="text-muted d-block small">Estimasi Laba Kotor Koperasi:</span>
-                            <span class="fs-4 fw-bold text-success" id="txt-gross-profit">Rp 0</span>
+                        <div class="col-md-6 text-end">
+                            <span class="text-muted d-block small">Total Nilai Persediaan yang Ditransfer:</span>
+                            <span class="fs-4 fw-bold text-primary" id="txt-total-cost">Rp 0</span>
+                            <span id="txt-total-price" style="display:none;">0</span>
+                            <span id="txt-gross-profit" style="display:none;">0</span>
                         </div>
                     </div>
                 </div>
@@ -128,7 +119,7 @@
                     <i class="ti ti-arrow-left"></i> {{ __('Kembali') }}
                 </a>
                 <button type="submit" class="btn btn-primary px-4">
-                    <i class="ti ti-check"></i> {{ __('Simpan & Potong Stok Koperasi') }}
+                    <i class="ti ti-check"></i> {{ __('Simpan & Kirim Distribusi ke SPPG') }}
                 </button>
             </div>
         </form>
@@ -176,12 +167,10 @@
             </td>
             <td>
                 <input type="text" class="form-control form-control-sm text-end" id="cost-display-${rowIndex}" readonly value="Rp 0">
+                <input type="hidden" id="price-display-${rowIndex}" value="0">
             </td>
             <td>
-                <input type="text" class="form-control form-control-sm text-end" id="price-display-${rowIndex}" readonly value="Rp 0">
-            </td>
-            <td>
-                <input type="text" class="form-control form-control-sm text-end fw-bold" id="subtotal-display-${rowIndex}" readonly value="Rp 0">
+                <input type="text" class="form-control form-control-sm text-end fw-bold text-primary" id="subtotal-display-${rowIndex}" readonly value="Rp 0">
             </td>
             <td class="text-center">
                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(${rowIndex})">
@@ -211,26 +200,22 @@
         const option = select.options[select.selectedIndex];
         if (option && option.value) {
             const cost = parseFloat(option.dataset.cost) || 0;
-            const price = parseFloat(option.dataset.price) || 0;
             const stock = parseFloat(option.dataset.stock) || 0;
             const unit = option.dataset.unit || 'Unit';
 
             document.getElementById(`stock-badge-${idx}`).textContent = `${stock} ${unit}`;
             document.getElementById(`unit-addon-${idx}`).textContent = unit;
             document.getElementById(`cost-display-${idx}`).value = formatRupiah(cost);
-            document.getElementById(`price-display-${idx}`).value = formatRupiah(price);
         } else {
             document.getElementById(`stock-badge-${idx}`).textContent = `0 Unit`;
             document.getElementById(`unit-addon-${idx}`).textContent = 'Satuan';
             document.getElementById(`cost-display-${idx}`).value = 'Rp 0';
-            document.getElementById(`price-display-${idx}`).value = 'Rp 0';
         }
         calculateTotals();
     }
 
     function calculateTotals() {
         let totalCost = 0;
-        let totalPrice = 0;
         let count = 0;
 
         const rows = document.querySelectorAll('#items-body tr');
@@ -240,29 +225,21 @@
             if (select && select.value && qtyInput && qtyInput.value) {
                 const option = select.options[select.selectedIndex];
                 const cost = parseFloat(option.dataset.cost) || 0;
-                const price = parseFloat(option.dataset.price) || 0;
                 const qty = parseFloat(qtyInput.value) || 0;
 
                 const subCost = cost * qty;
-                const subPrice = price * qty;
-
                 totalCost += subCost;
-                totalPrice += subPrice;
                 count++;
 
                 const subtotalDisplay = row.querySelector('input[id^="subtotal-display-"]');
                 if (subtotalDisplay) {
-                    subtotalDisplay.value = formatRupiah(subPrice);
+                    subtotalDisplay.value = formatRupiah(subCost);
                 }
             }
         });
 
-        const grossProfit = totalPrice - totalCost;
-
         document.getElementById('txt-total-items').textContent = `${count} Macam Bahan`;
         document.getElementById('txt-total-cost').textContent = formatRupiah(totalCost);
-        document.getElementById('txt-total-price').textContent = formatRupiah(totalPrice);
-        document.getElementById('txt-gross-profit').textContent = formatRupiah(grossProfit);
     }
 
     document.getElementById('btn-add-row').addEventListener('click', () => addRow());

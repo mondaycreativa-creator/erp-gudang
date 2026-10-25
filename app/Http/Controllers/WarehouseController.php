@@ -26,7 +26,7 @@ class WarehouseController extends Controller
     {
         if(\Auth::user()->isAbleTo('warehouse manage'))
         {
-            $warehouses = Warehouse::where('created_by', '=', creatorId())->where('workspace',getActiveWorkSpace())->get();
+            $warehouses = Warehouse::where('workspace', getActiveWorkSpace())->get();
 
             return view('warehouses.index',compact('warehouses'));
         }
@@ -121,7 +121,7 @@ class WarehouseController extends Controller
             if(WarehouseProduct::where('warehouse_id' , $warehouse->id)->exists())
             {
 
-                $warehouse = WarehouseProduct::where('warehouse_id' , $warehouse->id)->where('created_by', creatorId())->where('workspace',getActiveWorkSpace())->with('product')->get();
+                $warehouse = WarehouseProduct::where('warehouse_id' , $warehouse->id)->where('workspace',getActiveWorkSpace())->with('product')->get();
 
 
 
@@ -150,7 +150,7 @@ class WarehouseController extends Controller
     {
         if(\Auth::user()->isAbleTo('warehouse edit'))
         {
-            if($warehouse->created_by == creatorId() && $warehouse->workspace == getActiveWorkSpace())
+            if($warehouse->workspace == getActiveWorkSpace())
             {
                 if(module_is_active('CustomField')){
                     $warehouse->customField = \Modules\CustomField\Entities\CustomField::getData($warehouse, 'pos','warehouse');
@@ -181,7 +181,7 @@ class WarehouseController extends Controller
     {
         if(\Auth::user()->isAbleTo('warehouse edit'))
         {
-            if($warehouse->created_by == creatorId()  && $warehouse->workspace == getActiveWorkSpace())
+            if($warehouse->workspace == getActiveWorkSpace())
             {
                 $validator = \Validator::make(
                     $request->all(), [
@@ -228,7 +228,7 @@ class WarehouseController extends Controller
     {
         if(\Auth::user()->isAbleTo('warehouse delete'))
         {
-            if($warehouse->created_by == creatorId()  && $warehouse->workspace == getActiveWorkSpace())
+            if($warehouse->workspace == getActiveWorkSpace())
             {
                 $purchase = Purchase::where('warehouse_id',$warehouse->id)->get();
                 if(module_is_active('CustomField'))
