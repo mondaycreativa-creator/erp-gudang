@@ -9,7 +9,7 @@
 @endsection
 
 @section('page-action')
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex flex-wrap align-items-center gap-2">
         <a href="{{ route('purchases.create', 0) }}" class="btn btn-sm btn-primary">
             <i class="ti ti-shopping-cart-plus me-1"></i> {{ __('+ Barang Masuk (Pusat)') }}
         </a>
@@ -21,6 +21,120 @@
         </a>
     </div>
 @endsection
+
+@push('css')
+<style>
+    /* Card Container Styling */
+    .dashboard-activity-card {
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03) !important;
+        overflow: hidden;
+        background: #ffffff;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .dashboard-activity-card .card-header {
+        background-color: #ffffff !important;
+        border-bottom: 1px solid #edf2f7 !important;
+        padding: 0.95rem 1.25rem !important;
+    }
+    .dashboard-activity-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+
+    /* Desktop Activity Table */
+    .dashboard-activity-table {
+        margin-bottom: 0 !important;
+        width: 100%;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+    }
+    .dashboard-activity-table thead th {
+        background-color: #f8fafc !important;
+        color: #64748b !important;
+        font-size: 0.72rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.6px !important;
+        padding: 11px 16px !important;
+        border-top: none !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        white-space: nowrap !important;
+    }
+    .dashboard-activity-table tbody td {
+        padding: 12px 16px !important;
+        font-size: 0.85rem !important;
+        vertical-align: middle !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        background-color: transparent !important;
+    }
+    .dashboard-activity-table tbody tr:last-child td {
+        border-bottom: none !important;
+    }
+    .dashboard-activity-table tbody tr {
+        transition: background-color 0.15s ease-in-out;
+    }
+    .dashboard-activity-table tbody tr:hover td {
+        background-color: #f8fafc !important;
+    }
+
+    /* Mobile Feed List */
+    .dashboard-activity-mobile-item {
+        padding: 13px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        transition: background-color 0.15s ease-in-out;
+        background-color: #ffffff;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+    .dashboard-activity-mobile-item:last-child {
+        border-bottom: none;
+    }
+    .dashboard-activity-mobile-item:active,
+    .dashboard-activity-mobile-item:hover {
+        background-color: #f8fafc;
+    }
+
+    /* Custom Badges & Typography */
+    .badge-soft-warehouse {
+        background-color: #f1f5f9;
+        color: #334155;
+        border: 1px solid #e2e8f0;
+        font-weight: 500;
+        font-size: 0.75rem;
+        padding: 4px 9px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+    }
+    .badge-soft-portion {
+        background-color: #ecfdf5;
+        color: #059669;
+        border: 1px solid #a7f3d0;
+        font-weight: 600;
+        font-size: 0.78rem;
+        padding: 4px 10px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+    }
+    .code-pill {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-weight: 600;
+        font-size: 0.83rem;
+        letter-spacing: -0.2px;
+    }
+</style>
+@endpush
 
 @section('content')
 <div class="row">
@@ -68,21 +182,29 @@
 
     <!-- Main Stock Matrix Table (Fully Dynamic Multi-Warehouse) -->
     <div class="col-12 mb-4">
-        <div class="card">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-primary">
-                    <i class="ti ti-layout-grid me-1"></i> {{ __('Matriks Posisi Stok Bahan di Semua Gudang Real-Time') }}
-                </h5>
-                <div>
-                    <a href="{{ route('warehouses.index') }}" class="btn btn-sm btn-outline-secondary me-2">
-                        <i class="ti ti-settings me-1"></i> Kelola / Tambah Gudang
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <div class="card-header bg-white py-3 px-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="dashboard-activity-icon bg-light-primary text-primary">
+                        <i class="ti ti-layout-grid"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 text-dark fw-bold">
+                            {{ __('Matriks Posisi Stok Bahan di Semua Gudang Real-Time') }}
+                        </h5>
+                        <small class="text-muted d-none d-sm-inline">{{ __('Monitoring mutasi dan ketersediaan stok fisik gudang pusat & SPPG') }}</small>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <a href="{{ route('warehouses.index') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                        <i class="ti ti-settings me-1"></i> {{ __('Kelola Gudang') }}
                     </a>
-                    <span class="badge bg-primary px-3 py-2">
-                        <i class="ti ti-refresh me-1"></i> Real-Time Synchronized
+                    <span class="badge bg-light-primary text-primary px-3 py-2 rounded-pill fw-semibold">
+                        <i class="ti ti-refresh me-1"></i> {{ __('Real-Time Synchronized') }}
                     </span>
                 </div>
             </div>
-            <div class="card-body table-border-style">
+            <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover table-bordered mb-0 pc-dt-simple" id="matrix-table">
                         <thead class="table-light">
@@ -145,95 +267,191 @@
     </div>
 
     <!-- 2 Recent Activity Columns -->
-    <div class="col-lg-6 col-12 mb-3">
-        <div class="card h-100">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 text-primary fw-bold">
-                    <i class="ti ti-truck me-1"></i> {{ __('Pengiriman Terakhir ke SPPG (Distribusi)') }}
-                </h6>
-                <a href="{{ route('mbg.dispatches.index') }}" class="btn btn-sm btn-outline-primary">Lihat Semua</a>
+    <div class="col-lg-6 col-12 mb-4">
+        <div class="card h-100 dashboard-activity-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="dashboard-activity-icon bg-light-primary text-primary">
+                        <i class="ti ti-truck"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0 text-dark fw-bold">{{ __('Pengiriman Terakhir ke SPPG') }}</h6>
+                        <small class="text-muted d-none d-sm-inline">{{ __('Distribusi Bahan Makanan') }}</small>
+                    </div>
+                </div>
+                <a href="{{ route('mbg.dispatches.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                    {{ __('Lihat Semua') }} <i class="ti ti-chevron-right ms-1"></i>
+                </a>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped mb-0">
-                        <thead class="table-light">
+                <!-- Desktop Table View -->
+                <div class="table-responsive d-none d-md-block">
+                    <table class="table align-middle dashboard-activity-table">
+                        <thead>
                             <tr>
-                                <th>No. Surat Jalan</th>
-                                <th>Tujuan</th>
-                                <th>Tanggal</th>
-                                <th class="text-end">Nilai Transfer</th>
+                                <th style="width: 30%;">{{ __('No. Surat Jalan') }}</th>
+                                <th style="width: 30%;">{{ __('Tujuan SPPG') }}</th>
+                                <th class="text-center" style="width: 20%;">{{ __('Tanggal') }}</th>
+                                <th class="text-end" style="width: 20%;">{{ __('Nilai Transfer') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($recentDispatches as $disp)
                                 <tr>
                                     <td>
-                                        <a href="{{ route('mbg.dispatches.show', $disp->id) }}" class="fw-bold text-primary">
-                                            {{ $disp->dispatch_code }}
+                                        <a href="{{ route('mbg.dispatches.show', $disp->id) }}" class="fw-bold text-primary text-decoration-none code-pill">
+                                            <i class="ti ti-file-text me-1 opacity-75"></i>{{ $disp->dispatch_code }}
                                         </a>
                                     </td>
                                     <td>
-                                        <span class="badge bg-info text-white">
-                                            {{ $disp->toWarehouse ? $disp->toWarehouse->name : '-' }}
+                                        <span class="badge-soft-warehouse text-truncate" title="{{ $disp->toWarehouse ? $disp->toWarehouse->name : '-' }}">
+                                            <i class="ti ti-building-warehouse me-1 text-primary"></i>
+                                            <span class="text-truncate">{{ $disp->toWarehouse ? $disp->toWarehouse->name : '-' }}</span>
                                         </span>
                                     </td>
-                                    <td>{{ \Carbon\Carbon::parse($disp->delivery_date)->format('d M Y') }}</td>
-                                    <td class="text-end fw-bold">Rp {{ number_format($disp->total_cost, 0, ',', '.') }}</td>
+                                    <td class="text-center text-muted small text-nowrap">
+                                        <i class="ti ti-calendar me-1 opacity-75"></i>{{ \Carbon\Carbon::parse($disp->delivery_date)->format('d M Y') }}
+                                    </td>
+                                    <td class="text-end fw-bold text-dark text-nowrap">
+                                        Rp {{ number_format($disp->total_cost, 0, ',', '.') }}
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="text-center py-3 text-muted">Belum ada pengiriman distribusi tercatat.</td>
+                                    <td colspan="4" class="text-center py-4 text-muted">
+                                        <i class="ti ti-inbox fs-2 d-block mb-1 opacity-50"></i>
+                                        <small>{{ __('Belum ada pengiriman distribusi tercatat.') }}</small>
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Mobile Feed View -->
+                <div class="d-md-none">
+                    @forelse($recentDispatches as $disp)
+                        <a href="{{ route('mbg.dispatches.show', $disp->id) }}" class="dashboard-activity-mobile-item">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-primary code-pill">
+                                    <i class="ti ti-file-text me-1"></i>{{ $disp->dispatch_code }}
+                                </span>
+                                <span class="fw-bold text-dark fs-6">
+                                    Rp {{ number_format($disp->total_cost, 0, ',', '.') }}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center text-muted small">
+                                <span class="d-inline-flex align-items-center text-truncate pe-2">
+                                    <i class="ti ti-building-warehouse me-1 text-primary flex-shrink-0"></i>
+                                    <span class="text-truncate">{{ $disp->toWarehouse ? $disp->toWarehouse->name : '-' }}</span>
+                                </span>
+                                <span class="flex-shrink-0 text-nowrap">
+                                    <i class="ti ti-calendar me-1"></i>{{ \Carbon\Carbon::parse($disp->delivery_date)->format('d M Y') }}
+                                </span>
+                            </div>
+                        </a>
+                    @empty
+                        <div class="text-center py-4 text-muted">
+                            <i class="ti ti-inbox fs-2 d-block mb-1 opacity-50"></i>
+                            <small>{{ __('Belum ada pengiriman distribusi tercatat.') }}</small>
+                        </div>
+                    @endforelse
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="col-lg-6 col-12 mb-3">
-        <div class="card h-100">
-            <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 text-success fw-bold">
-                    <i class="ti ti-tools-kitchen-2 me-1"></i> {{ __('Pemakaian Terakhir Dapur SPPG (Internal)') }}
-                </h6>
-                <a href="{{ route('mbg.usages.index') }}" class="btn btn-sm btn-outline-success">Lihat Semua</a>
+    <div class="col-lg-6 col-12 mb-4">
+        <div class="card h-100 dashboard-activity-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="dashboard-activity-icon bg-light-success text-success">
+                        <i class="ti ti-tools-kitchen-2"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0 text-dark fw-bold">{{ __('Pemakaian Terakhir Dapur SPPG') }}</h6>
+                        <small class="text-muted d-none d-sm-inline">{{ __('Konsumsi Bahan Internal') }}</small>
+                    </div>
+                </div>
+                <a href="{{ route('mbg.usages.index') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                    {{ __('Lihat Semua') }} <i class="ti ti-chevron-right ms-1"></i>
+                </a>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped mb-0">
-                        <thead class="table-light">
+                <!-- Desktop Table View -->
+                <div class="table-responsive d-none d-md-block">
+                    <table class="table align-middle dashboard-activity-table">
+                        <thead>
                             <tr>
-                                <th>Kode Masak</th>
-                                <th>Lokasi SPPG</th>
-                                <th>Tanggal</th>
-                                <th>Porsi</th>
+                                <th style="width: 30%;">{{ __('Kode Masak') }}</th>
+                                <th style="width: 30%;">{{ __('Lokasi SPPG') }}</th>
+                                <th class="text-center" style="width: 20%;">{{ __('Tanggal') }}</th>
+                                <th class="text-end" style="width: 20%;">{{ __('Porsi') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($recentUsages as $use)
                                 <tr>
                                     <td>
-                                        <a href="{{ route('mbg.usages.show', $use->id) }}" class="fw-bold text-success">
-                                            {{ $use->usage_code }}
+                                        <a href="{{ route('mbg.usages.show', $use->id) }}" class="fw-bold text-success text-decoration-none code-pill">
+                                            <i class="ti ti-soup me-1 opacity-75"></i>{{ $use->usage_code }}
                                         </a>
                                     </td>
                                     <td>
-                                        <span class="badge bg-light text-dark border">
-                                            {{ $use->warehouse ? $use->warehouse->name : '-' }}
+                                        <span class="badge-soft-warehouse text-truncate" title="{{ $use->warehouse ? $use->warehouse->name : '-' }}">
+                                            <i class="ti ti-building-warehouse me-1 text-success"></i>
+                                            <span class="text-truncate">{{ $use->warehouse ? $use->warehouse->name : '-' }}</span>
                                         </span>
                                     </td>
-                                    <td>{{ \Carbon\Carbon::parse($use->usage_date)->format('d M Y') }}</td>
-                                    <td><span class="badge bg-secondary">{{ $use->portion_count }} porsi</span></td>
+                                    <td class="text-center text-muted small text-nowrap">
+                                        <i class="ti ti-calendar me-1 opacity-75"></i>{{ \Carbon\Carbon::parse($use->usage_date)->format('d M Y') }}
+                                    </td>
+                                    <td class="text-end text-nowrap">
+                                        <span class="badge-soft-portion">
+                                            <i class="ti ti-tools-kitchen-2 me-1"></i>{{ number_format($use->portion_count, 0, ',', '.') }} porsi
+                                        </span>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="text-center py-3 text-muted">Belum ada pemakaian dapur tercatat.</td>
+                                    <td colspan="4" class="text-center py-4 text-muted">
+                                        <i class="ti ti-inbox fs-2 d-block mb-1 opacity-50"></i>
+                                        <small>{{ __('Belum ada pemakaian dapur tercatat.') }}</small>
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Mobile Feed View -->
+                <div class="d-md-none">
+                    @forelse($recentUsages as $use)
+                        <a href="{{ route('mbg.usages.show', $use->id) }}" class="dashboard-activity-mobile-item">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-success code-pill">
+                                    <i class="ti ti-soup me-1"></i>{{ $use->usage_code }}
+                                </span>
+                                <span class="badge-soft-portion">
+                                    <i class="ti ti-tools-kitchen-2 me-1"></i>{{ number_format($use->portion_count, 0, ',', '.') }} porsi
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center text-muted small">
+                                <span class="d-inline-flex align-items-center text-truncate pe-2">
+                                    <i class="ti ti-building-warehouse me-1 text-success flex-shrink-0"></i>
+                                    <span class="text-truncate">{{ $use->warehouse ? $use->warehouse->name : '-' }}</span>
+                                </span>
+                                <span class="flex-shrink-0 text-nowrap">
+                                    <i class="ti ti-calendar me-1"></i>{{ \Carbon\Carbon::parse($use->usage_date)->format('d M Y') }}
+                                </span>
+                            </div>
+                        </a>
+                    @empty
+                        <div class="text-center py-4 text-muted">
+                            <i class="ti ti-inbox fs-2 d-block mb-1 opacity-50"></i>
+                            <small>{{ __('Belum ada pemakaian dapur tercatat.') }}</small>
+                        </div>
+                    @endforelse
                 </div>
             </div>
         </div>
