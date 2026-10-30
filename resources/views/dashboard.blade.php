@@ -24,19 +24,25 @@
 
 @push('css')
 <style>
-    /* Card Container Styling */
-    .dashboard-activity-card {
-        border-radius: 12px;
+    /* Card Container Styling - Override theme's .card:not(.table-card) quirks */
+    .dashboard-activity-card,
+    .dashboard-activity-card.card,
+    .dashboard-activity-card.table-card {
+        border-radius: 12px !important;
         border: 1px solid rgba(0, 0, 0, 0.08) !important;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03) !important;
-        overflow: hidden;
-        background: #ffffff;
+        overflow: hidden !important;
+        background: #ffffff !important;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .dashboard-activity-card .card-header {
         background-color: #ffffff !important;
         border-bottom: 1px solid #edf2f7 !important;
         padding: 0.95rem 1.25rem !important;
+    }
+    .dashboard-activity-card .card-body {
+        padding: 0 !important;
+        overflow: hidden !important;
     }
     .dashboard-activity-icon {
         width: 36px;
@@ -49,28 +55,55 @@
         flex-shrink: 0;
     }
 
-    /* Desktop Activity Table */
+    /* Table Container - Reset negative margin and forced 100%+50px width */
+    .dashboard-activity-card .table-responsive,
+    .dashboard-activity-card.table-card .table-responsive {
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Slim, unobtrusive scrollbar */
+    .dashboard-activity-card .table-responsive::-webkit-scrollbar {
+        height: 4px;
+    }
+    .dashboard-activity-card .table-responsive::-webkit-scrollbar-track {
+        background: #f8fafc;
+        border-radius: 4px;
+    }
+    .dashboard-activity-card .table-responsive::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+    .dashboard-activity-card .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    /* Desktop Activity Table - Perfectly proportioned */
     .dashboard-activity-table {
-        margin-bottom: 0 !important;
-        width: 100%;
-        border-collapse: separate !important;
-        border-spacing: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
     }
     .dashboard-activity-table thead th {
         background-color: #f8fafc !important;
         color: #64748b !important;
-        font-size: 0.72rem !important;
+        font-size: 0.70rem !important;
         font-weight: 700 !important;
         text-transform: uppercase !important;
-        letter-spacing: 0.6px !important;
-        padding: 11px 16px !important;
+        letter-spacing: 0.3px !important;
+        padding: 9px 8px !important;
         border-top: none !important;
         border-bottom: 1px solid #e2e8f0 !important;
         white-space: nowrap !important;
     }
     .dashboard-activity-table tbody td {
-        padding: 12px 16px !important;
-        font-size: 0.85rem !important;
+        padding: 10px 8px !important;
+        font-size: 0.80rem !important;
         vertical-align: middle !important;
         border-bottom: 1px solid #f1f5f9 !important;
         background-color: transparent !important;
@@ -83,6 +116,16 @@
     }
     .dashboard-activity-table tbody tr:hover td {
         background-color: #f8fafc !important;
+    }
+
+    /* Explicit left and right margin spacing for the table cells to prevent any clipping */
+    .dashboard-activity-card .table tr th:first-child,
+    .dashboard-activity-card .table tr td:first-child {
+        padding-left: 16px !important;
+    }
+    .dashboard-activity-card .table tr th:last-child,
+    .dashboard-activity-card .table tr td:last-child {
+        padding-right: 16px !important;
     }
 
     /* Mobile Feed List */
@@ -109,8 +152,8 @@
         color: #334155;
         border: 1px solid #e2e8f0;
         font-weight: 500;
-        font-size: 0.75rem;
-        padding: 4px 9px;
+        font-size: 0.74rem;
+        padding: 3px 8px;
         border-radius: 6px;
         display: inline-flex;
         align-items: center;
@@ -121,8 +164,8 @@
         color: #059669;
         border: 1px solid #a7f3d0;
         font-weight: 600;
-        font-size: 0.78rem;
-        padding: 4px 10px;
+        font-size: 0.76rem;
+        padding: 3px 9px;
         border-radius: 20px;
         display: inline-flex;
         align-items: center;
@@ -130,7 +173,7 @@
     .code-pill {
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
         font-weight: 600;
-        font-size: 0.83rem;
+        font-size: 0.80rem;
         letter-spacing: -0.2px;
     }
 </style>
@@ -268,7 +311,7 @@
 
     <!-- 2 Recent Activity Columns -->
     <div class="col-lg-6 col-12 mb-4">
-        <div class="card h-100 dashboard-activity-card">
+        <div class="card h-100 table-card dashboard-activity-card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-2">
                     <div class="dashboard-activity-icon bg-light-primary text-primary">
@@ -289,23 +332,23 @@
                     <table class="table align-middle dashboard-activity-table">
                         <thead>
                             <tr>
-                                <th style="width: 30%;">{{ __('No. Surat Jalan') }}</th>
+                                <th style="width: 28%;">{{ __('No. Surat Jalan') }}</th>
                                 <th style="width: 30%;">{{ __('Tujuan SPPG') }}</th>
                                 <th class="text-center" style="width: 20%;">{{ __('Tanggal') }}</th>
-                                <th class="text-end" style="width: 20%;">{{ __('Nilai Transfer') }}</th>
+                                <th class="text-end" style="width: 22%;">{{ __('Nilai Transfer') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($recentDispatches as $disp)
                                 <tr>
                                     <td>
-                                        <a href="{{ route('mbg.dispatches.show', $disp->id) }}" class="fw-bold text-primary text-decoration-none code-pill">
+                                        <a href="{{ route('mbg.dispatches.show', $disp->id) }}" class="fw-bold text-primary text-decoration-none code-pill text-nowrap">
                                             <i class="ti ti-file-text me-1 opacity-75"></i>{{ $disp->dispatch_code }}
                                         </a>
                                     </td>
                                     <td>
-                                        <span class="badge-soft-warehouse text-truncate" title="{{ $disp->toWarehouse ? $disp->toWarehouse->name : '-' }}">
-                                            <i class="ti ti-building-warehouse me-1 text-primary"></i>
+                                        <span class="badge-soft-warehouse text-truncate" style="max-width: 140px;" title="{{ $disp->toWarehouse ? $disp->toWarehouse->name : '-' }}">
+                                            <i class="ti ti-building-warehouse me-1 text-primary flex-shrink-0"></i>
                                             <span class="text-truncate">{{ $disp->toWarehouse ? $disp->toWarehouse->name : '-' }}</span>
                                         </span>
                                     </td>
@@ -362,7 +405,7 @@
     </div>
 
     <div class="col-lg-6 col-12 mb-4">
-        <div class="card h-100 dashboard-activity-card">
+        <div class="card h-100 table-card dashboard-activity-card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center gap-2">
                     <div class="dashboard-activity-icon bg-light-success text-success">
@@ -383,23 +426,23 @@
                     <table class="table align-middle dashboard-activity-table">
                         <thead>
                             <tr>
-                                <th style="width: 30%;">{{ __('Kode Masak') }}</th>
+                                <th style="width: 28%;">{{ __('Kode Masak') }}</th>
                                 <th style="width: 30%;">{{ __('Lokasi SPPG') }}</th>
                                 <th class="text-center" style="width: 20%;">{{ __('Tanggal') }}</th>
-                                <th class="text-end" style="width: 20%;">{{ __('Porsi') }}</th>
+                                <th class="text-end" style="width: 22%;">{{ __('Porsi') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($recentUsages as $use)
                                 <tr>
                                     <td>
-                                        <a href="{{ route('mbg.usages.show', $use->id) }}" class="fw-bold text-success text-decoration-none code-pill">
+                                        <a href="{{ route('mbg.usages.show', $use->id) }}" class="fw-bold text-success text-decoration-none code-pill text-nowrap">
                                             <i class="ti ti-soup me-1 opacity-75"></i>{{ $use->usage_code }}
                                         </a>
                                     </td>
                                     <td>
-                                        <span class="badge-soft-warehouse text-truncate" title="{{ $use->warehouse ? $use->warehouse->name : '-' }}">
-                                            <i class="ti ti-building-warehouse me-1 text-success"></i>
+                                        <span class="badge-soft-warehouse text-truncate" style="max-width: 140px;" title="{{ $use->warehouse ? $use->warehouse->name : '-' }}">
+                                            <i class="ti ti-building-warehouse me-1 text-success flex-shrink-0"></i>
                                             <span class="text-truncate">{{ $use->warehouse ? $use->warehouse->name : '-' }}</span>
                                         </span>
                                     </td>
