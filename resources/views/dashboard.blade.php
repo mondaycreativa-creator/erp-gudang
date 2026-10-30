@@ -176,6 +176,101 @@
         font-size: 0.80rem;
         letter-spacing: -0.2px;
     }
+
+    /* Stock Matrix Card & Table Enhancements - No Horizontal Scroll on Desktop */
+    #stock-matrix-card {
+        border-radius: 12px !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03) !important;
+        background: #ffffff !important;
+        overflow: hidden !important;
+    }
+    #stock-matrix-card .card-header {
+        background-color: #ffffff !important;
+        border-bottom: 1px solid #edf2f7 !important;
+        padding: 0.95rem 1.25rem !important;
+    }
+    #stock-matrix-card .card-body {
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+    #stock-matrix-card .dataTable-top,
+    #stock-matrix-card .dataTable-bottom {
+        padding: 10px 16px !important;
+        background-color: #fafbfc;
+        border-bottom: 1px solid #edf2f7;
+    }
+    #stock-matrix-card .dataTable-bottom {
+        border-bottom: none;
+        border-top: 1px solid #edf2f7;
+    }
+    #stock-matrix-card .dataTable-input {
+        border-radius: 20px !important;
+        padding: 5px 14px !important;
+        font-size: 0.82rem !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+    #stock-matrix-card .dataTable-selector {
+        border-radius: 8px !important;
+        padding: 4px 8px !important;
+        font-size: 0.82rem !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+    #stock-matrix-card .table-responsive {
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    #stock-matrix-card .table-responsive::-webkit-scrollbar {
+        height: 4px;
+    }
+    #stock-matrix-card .table-responsive::-webkit-scrollbar-track {
+        background: #f8fafc;
+        border-radius: 4px;
+    }
+    #stock-matrix-card .table-responsive::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
+    #matrix-table {
+        margin: 0 !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    #matrix-table thead th {
+        background-color: #f8fafc !important;
+        color: #475569 !important;
+        font-size: 0.72rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.3px !important;
+        padding: 10px 6px !important;
+        vertical-align: middle !important;
+        border-top: none !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+    }
+    #matrix-table tbody td {
+        padding: 9px 6px !important;
+        font-size: 0.82rem !important;
+        vertical-align: middle !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+    }
+    #matrix-table tbody tr:hover td {
+        background-color: #f8fafc !important;
+    }
+    #matrix-table tr th:first-child,
+    #matrix-table tr td:first-child {
+        padding-left: 16px !important;
+    }
+    #matrix-table tr th:last-child,
+    #matrix-table tr td:last-child {
+        padding-right: 16px !important;
+    }
 </style>
 @endpush
 
@@ -225,7 +320,7 @@
 
     <!-- Main Stock Matrix Table (Fully Dynamic Multi-Warehouse) -->
     <div class="col-12 mb-4">
-        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden table-card" id="stock-matrix-card">
             <div class="card-header bg-white py-3 px-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <div class="d-flex align-items-center gap-2">
                     <div class="dashboard-activity-icon bg-light-primary text-primary">
@@ -251,55 +346,69 @@
                 <div class="table-responsive">
                     <table class="table table-hover table-bordered mb-0 pc-dt-simple" id="matrix-table">
                         <thead class="table-light">
+                            @php
+                                $swhCount = count($sppgWarehouses);
+                                $totalWh = 1 + $swhCount;
+                                $whColWidth = $totalWh > 0 ? max(8, round(44 / $totalWh, 1)) : 11;
+                                $pusatName = $pusat ? $pusat->name : 'Gudang Pusat';
+                                $pusatShort = preg_replace('/^(Gudang\s+|gudang\s+)/i', '', $pusatName);
+                            @endphp
                             <tr>
-                                <th style="width: 10%;">{{ __('Kode SKU') }}</th>
-                                <th>{{ __('Nama Bahan / Produk') }}</th>
-                                <th style="width: 7%;">{{ __('Satuan') }}</th>
-                                <th style="width: 12%;" class="text-center bg-light-primary fw-bold text-primary">
-                                    {{ $pusat ? $pusat->name : 'Gudang Pusat' }}
+                                <th style="width: 32%;">{{ __('Bahan & Spesifikasi') }}</th>
+                                <th style="width: {{ $whColWidth }}%;" class="text-center bg-light-primary text-primary" data-sortable="false" title="{{ $pusatName }}">
+                                    <div class="fw-bold text-truncate" style="font-size: 0.72rem;">{{ $pusatShort }}</div>
+                                    <span class="badge bg-primary text-white" style="font-size: 0.60rem; padding: 1px 5px;">Pusat</span>
                                 </th>
                                 @foreach($sppgWarehouses as $swh)
-                                    <th style="width: 12%;" class="text-center bg-light-info fw-bold text-info">
-                                        {{ $swh->name }}
+                                    @php
+                                        $swhShort = preg_replace('/^(Gudang\s+|gudang\s+)/i', '', $swh->name);
+                                    @endphp
+                                    <th style="width: {{ $whColWidth }}%;" class="text-center bg-light-info text-info" data-sortable="false" title="{{ $swh->name }}">
+                                        <div class="fw-bold text-truncate" style="font-size: 0.72rem;">{{ $swhShort }}</div>
+                                        <span class="badge bg-info text-white" style="font-size: 0.60rem; padding: 1px 5px;">SPPG</span>
                                     </th>
                                 @endforeach
-                                <th style="width: 10%;" class="text-center">{{ __('Total Fisik') }}</th>
-                                <th style="width: 13%;" class="text-end">{{ __('Nilai Aset (Rp)') }}</th>
+                                <th style="width: 11%;" class="text-center">{{ __('Total Stok') }}</th>
+                                <th style="width: 13%;" class="text-end">{{ __('Nilai Aset') }}</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($productMatrix as $item)
                                 <tr>
-                                    <td><span class="badge bg-light text-dark border">{{ $item->sku ?: '-' }}</span></td>
                                     <td>
-                                        <span class="fw-bold text-dark">{{ $item->name }}</span>
-                                        <small class="text-muted d-block">{{ $item->category }}</small>
+                                        <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                            <span class="fw-bold text-dark">{{ $item->name }}</span>
+                                            <span class="badge bg-light text-secondary border px-1.5 py-0.5" style="font-size: 0.68rem;">{{ $item->unit }}</span>
+                                        </div>
+                                        <div class="small text-muted d-flex align-items-center gap-1 mt-0.5">
+                                            <span class="badge bg-light text-dark border font-monospace" style="font-size: 0.68rem; padding: 1px 4px;">{{ $item->sku ?: '-' }}</span>
+                                            <span class="text-muted ms-1" style="font-size: 0.74rem;">{{ $item->category }}</span>
+                                        </div>
                                     </td>
-                                    <td><span class="badge bg-secondary">{{ $item->unit }}</span></td>
-                                    <td class="text-center fs-6 fw-bold text-primary bg-light-primary">
+                                    <td class="text-center fs-6 fw-bold text-primary bg-light-primary py-2">
                                         {{ number_format($item->stock_pusat, 1, ',', '.') }}
                                     </td>
                                     @foreach($sppgWarehouses as $swh)
-                                        <td class="text-center fs-6 fw-bold text-info bg-light-info">
+                                        <td class="text-center fs-6 fw-bold text-info bg-light-info py-2">
                                             {{ number_format($item->sppg_stocks[$swh->id] ?? 0, 1, ',', '.') }}
                                         </td>
                                     @endforeach
-                                    <td class="text-center">
+                                    <td class="text-center py-2 text-nowrap">
                                         @if($item->total_stock <= 0)
-                                            <span class="badge bg-danger">Habis (0)</span>
+                                            <span class="badge bg-danger px-2 py-1" style="font-size: 0.74rem;">Habis (0)</span>
                                         @elseif($item->total_stock < 20)
-                                            <span class="badge bg-warning text-dark">{{ number_format($item->total_stock, 1, ',', '.') }} (Menipis)</span>
+                                            <span class="badge bg-warning text-dark px-2 py-1" style="font-size: 0.74rem;">{{ number_format($item->total_stock, 1, ',', '.') }} (Menipis)</span>
                                         @else
-                                            <span class="badge bg-success">{{ number_format($item->total_stock, 1, ',', '.') }}</span>
+                                            <span class="badge bg-success px-2 py-1" style="font-size: 0.74rem;">{{ number_format($item->total_stock, 1, ',', '.') }}</span>
                                         @endif
                                     </td>
-                                    <td class="text-end fw-bold text-dark">
+                                    <td class="text-end fw-bold text-dark py-2 text-nowrap" style="font-size: 0.82rem;">
                                         Rp {{ number_format($item->total_asset, 0, ',', '.') }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ 5 + count($sppgWarehouses) }}" class="text-center py-4 text-muted">Belum ada data bahan makanan terdaftar.</td>
+                                    <td colspan="{{ 4 + count($sppgWarehouses) }}" class="text-center py-4 text-muted">Belum ada data bahan makanan terdaftar.</td>
                                 </tr>
                             @endforelse
                         </tbody>
