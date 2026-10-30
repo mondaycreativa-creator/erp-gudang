@@ -177,6 +177,16 @@
         letter-spacing: -0.2px;
     }
 
+    /* Remove theme's default decorative vertical bar that collides with header icons */
+    #stock-matrix-card .card-header h5:after,
+    #stock-matrix-card .card-header .h5:after,
+    .dashboard-activity-card .card-header h5:after,
+    .dashboard-activity-card .card-header h6:after,
+    .dashboard-activity-card .card-header .h6:after {
+        display: none !important;
+        content: none !important;
+    }
+
     /* Stock Matrix Card & Table Enhancements - No Horizontal Scroll on Desktop */
     #stock-matrix-card {
         border-radius: 12px !important;
@@ -194,43 +204,48 @@
         padding: 0 !important;
         overflow: hidden !important;
     }
-    /* Fixed Search and Dropdown controls at top - Outside scroll area */
-    #stock-matrix-card .dataTable-top,
+    /* Hide the default redundant DataTables top row (Search is now neatly placed in Card Header) */
+    #stock-matrix-card .dataTable-top {
+        display: none !important;
+    }
+
+    /* Header Search Input Styling */
+    .matrix-search-input {
+        background-color: #f1f5f9 !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 20px !important;
+        padding: 6px 14px 6px 34px !important;
+        font-size: 0.82rem !important;
+        transition: all 0.2s ease-in-out;
+        width: 200px;
+        height: 34px;
+        color: #1e293b !important;
+    }
+    .matrix-search-input:focus {
+        background-color: #ffffff !important;
+        border-color: #0CAF60 !important;
+        box-shadow: 0 0 0 3px rgba(12, 175, 96, 0.15) !important;
+        width: 240px;
+        outline: none !important;
+    }
+
+    /* Clean Bottom Pagination Bar */
     #stock-matrix-card .dataTable-bottom {
-        padding: 10px 16px !important;
-        background-color: #fafbfc;
-        border-bottom: 1px solid #edf2f7;
+        padding: 10px 18px !important;
+        background-color: #ffffff !important;
+        border-top: 1px solid #edf2f7 !important;
         width: 100% !important;
-        max-width: 100% !important;
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
         flex-wrap: wrap !important;
-        gap: 8px !important;
-        position: relative !important;
+        font-size: 0.82rem;
     }
-    #stock-matrix-card .dataTable-top > div,
     #stock-matrix-card .dataTable-bottom > div {
         float: none !important;
         margin: 0 !important;
     }
-    #stock-matrix-card .dataTable-bottom {
-        border-bottom: none;
-        border-top: 1px solid #edf2f7;
-    }
-    #stock-matrix-card .dataTable-input {
-        border-radius: 20px !important;
-        padding: 5px 14px !important;
-        font-size: 0.82rem !important;
-        border: 1px solid #cbd5e1 !important;
-        outline: none !important;
-    }
-    #stock-matrix-card .dataTable-selector {
-        border-radius: 8px !important;
-        padding: 4px 8px !important;
-        font-size: 0.82rem !important;
-        border: 1px solid #cbd5e1 !important;
-    }
+
     /* Scroll only applies to table container, NOT the search bar or pagination */
     #stock-matrix-card .dataTable-container {
         margin: 0 !important;
@@ -340,7 +355,7 @@
     <!-- Main Stock Matrix Table (Fully Dynamic Multi-Warehouse) -->
     <div class="col-12 mb-4">
         <div class="card border-0 shadow-sm rounded-3 overflow-hidden table-card" id="stock-matrix-card">
-            <div class="card-header bg-white py-3 px-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="card-header bg-white py-3 px-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-3">
                 <div class="d-flex align-items-center gap-2">
                     <div class="dashboard-activity-icon bg-light-primary text-primary">
                         <i class="ti ti-layout-grid"></i>
@@ -352,12 +367,16 @@
                         <small class="text-muted d-none d-sm-inline">{{ __('Monitoring mutasi dan ketersediaan stok fisik gudang pusat & SPPG') }}</small>
                     </div>
                 </div>
-                <div class="d-flex flex-wrap align-items-center gap-2">
-                    <a href="{{ route('warehouses.index') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                <div class="d-flex flex-wrap align-items-center gap-2 ms-auto">
+                    <div class="position-relative">
+                        <i class="ti ti-search position-absolute top-50 translate-middle-y text-muted" style="left: 12px; pointer-events: none;"></i>
+                        <input type="text" id="custom-matrix-search" class="form-control matrix-search-input" placeholder="{{ __('Cari Bahan / SKU...') }}">
+                    </div>
+                    <a href="{{ route('warehouses.index') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3" style="height: 34px; display: inline-flex; align-items: center;">
                         <i class="ti ti-settings me-1"></i> {{ __('Kelola Gudang') }}
                     </a>
-                    <span class="badge bg-light-primary text-primary px-3 py-2 rounded-pill fw-semibold">
-                        <i class="ti ti-refresh me-1"></i> {{ __('Real-Time Synchronized') }}
+                    <span class="badge bg-light-primary text-primary px-3 rounded-pill fw-semibold" style="height: 34px; display: inline-flex; align-items: center;">
+                        <i class="ti ti-refresh me-1"></i> {{ __('Real-Time') }}
                     </span>
                 </div>
             </div>
@@ -627,3 +646,21 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('custom-matrix-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                const query = this.value;
+                const dtInput = document.querySelector('#stock-matrix-card .dataTable-input');
+                if (dtInput) {
+                    dtInput.value = query;
+                    dtInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            });
+        }
+    });
+</script>
+@endpush
