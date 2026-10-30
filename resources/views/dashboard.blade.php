@@ -194,11 +194,25 @@
         padding: 0 !important;
         overflow: hidden !important;
     }
+    /* Fixed Search and Dropdown controls at top - Outside scroll area */
     #stock-matrix-card .dataTable-top,
     #stock-matrix-card .dataTable-bottom {
         padding: 10px 16px !important;
         background-color: #fafbfc;
         border-bottom: 1px solid #edf2f7;
+        width: 100% !important;
+        max-width: 100% !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        position: relative !important;
+    }
+    #stock-matrix-card .dataTable-top > div,
+    #stock-matrix-card .dataTable-bottom > div {
+        float: none !important;
+        margin: 0 !important;
     }
     #stock-matrix-card .dataTable-bottom {
         border-bottom: none;
@@ -209,6 +223,7 @@
         padding: 5px 14px !important;
         font-size: 0.82rem !important;
         border: 1px solid #cbd5e1 !important;
+        outline: none !important;
     }
     #stock-matrix-card .dataTable-selector {
         border-radius: 8px !important;
@@ -216,7 +231,8 @@
         font-size: 0.82rem !important;
         border: 1px solid #cbd5e1 !important;
     }
-    #stock-matrix-card .table-responsive {
+    /* Scroll only applies to table container, NOT the search bar or pagination */
+    #stock-matrix-card .dataTable-container {
         margin: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
@@ -225,16 +241,19 @@
         overflow-y: hidden !important;
         -webkit-overflow-scrolling: touch;
     }
-    #stock-matrix-card .table-responsive::-webkit-scrollbar {
+    #stock-matrix-card .dataTable-container::-webkit-scrollbar {
         height: 4px;
     }
-    #stock-matrix-card .table-responsive::-webkit-scrollbar-track {
+    #stock-matrix-card .dataTable-container::-webkit-scrollbar-track {
         background: #f8fafc;
         border-radius: 4px;
     }
-    #stock-matrix-card .table-responsive::-webkit-scrollbar-thumb {
+    #stock-matrix-card .dataTable-container::-webkit-scrollbar-thumb {
         background: #cbd5e1;
         border-radius: 4px;
+    }
+    #stock-matrix-card .dataTable-container::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
     }
 
     #matrix-table {
@@ -343,8 +362,7 @@
                 </div>
             </div>
             <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-bordered mb-0 pc-dt-simple" id="matrix-table">
+                <table class="table table-hover table-bordered mb-0 pc-dt-simple" id="matrix-table">
                         <thead class="table-light">
                             @php
                                 $swhCount = count($sppgWarehouses);
@@ -413,7 +431,6 @@
                             @endforelse
                         </tbody>
                     </table>
-                </div>
             </div>
         </div>
     </div>
