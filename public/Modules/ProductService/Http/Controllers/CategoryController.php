@@ -24,11 +24,11 @@ class CategoryController extends Controller
     {
         if(Auth::user()->isAbleTo('category create'))
         {
-            $product_categories = \Modules\ProductService\Entities\Category::where('created_by', '=', creatorId())->where('workspace_id',getActiveWorkSpace())->where('type',0)->get();
-            $income_categories = \Modules\ProductService\Entities\Category::where('created_by', '=', creatorId())->where('workspace_id',getActiveWorkSpace())->where('type',1)->get();
-            $expance_categories = \Modules\ProductService\Entities\Category::where('created_by', '=', creatorId())->where('workspace_id',getActiveWorkSpace())->where('type',2)->get();
-            $taxes = \Modules\ProductService\Entities\Tax::where('created_by',creatorId())->where('workspace_id',getActiveWorkSpace())->get();
-            $units = \Modules\ProductService\Entities\Unit::where('created_by',creatorId())->where('workspace_id',getActiveWorkSpace())->get();
+            $product_categories = \Modules\ProductService\Entities\Category::forCompanyOrGlobal()->where('type', 0)->get();
+            $income_categories  = \Modules\ProductService\Entities\Category::forCompanyOrGlobal()->where('type', 1)->get();
+            $expance_categories = \Modules\ProductService\Entities\Category::forCompanyOrGlobal()->where('type', 2)->get();
+            $taxes              = \Modules\ProductService\Entities\Tax::forCompanyOrGlobal()->get();
+            $units              = \Modules\ProductService\Entities\Unit::forCompanyOrGlobal()->get();
 
             return view('productservice::category.index',compact('product_categories','income_categories','expance_categories','taxes','units'));
         }
@@ -50,14 +50,12 @@ class CategoryController extends Controller
 
             if($types == 1)
             {
-                $chartAccountTypes  = ChartOfAccountType::where('workspace', getActiveWorkSpace())
-                    ->where('created_by', creatorId())
+                $chartAccountTypes  = ChartOfAccountType::forCompanyOrGlobal()
                     ->whereIn('name', ['Income'])
                     ->get();
             }
             elseif($types == 2){
-                $chartAccountTypes  = ChartOfAccountType::where('workspace', getActiveWorkSpace())
-                    ->where('created_by', creatorId())
+                $chartAccountTypes  = ChartOfAccountType::forCompanyOrGlobal()
                     ->whereIn('name', ['Expenses'])
                     ->get();
             }
@@ -71,19 +69,18 @@ class CategoryController extends Controller
             foreach ($chartAccountTypes as $chartAccountType)
             {
                 $chartAccounts = ChartOfAccount::select(\DB::raw('CONCAT(code, " - ", name) AS code_name, id'))
+                    ->forCompanyOrGlobal()
                     ->where('parent', '=', 0)
                     ->where('type', '=', $chartAccountType->id)
-                    ->where('workspace', getActiveWorkSpace())
-                    ->where('created_by', creatorId())->get()
+                    ->get()
                     ->pluck('code_name', 'id');
                 $chartAccounts->prepend('Select Account', 0);
 
                 $subAccounts = ChartOfAccount::select('chart_of_accounts.id', 'chart_of_accounts.code', 'chart_of_accounts.name', 'chart_of_account_parents.account');
                 $subAccounts->leftjoin('chart_of_account_parents', 'chart_of_accounts.parent', 'chart_of_account_parents.id');
-                $subAccounts->where('chart_of_accounts.parent', '!=', 0);
-                $subAccounts->where('chart_of_accounts.type', '=', $chartAccountType->id);
-                $subAccounts->where('chart_of_accounts.workspace', getActiveWorkSpace());
-                $subAccounts->where('chart_of_accounts.created_by', creatorId());
+                $subAccounts->forCompanyOrGlobal()
+                    ->where('chart_of_accounts.parent', '!=', 0)
+                    ->where('chart_of_accounts.type', '=', $chartAccountType->id);
                 $subAccounts = $subAccounts->get()->toArray();
             }
 
@@ -163,14 +160,12 @@ class CategoryController extends Controller
             if($category->type == 1)
             {
 
-                $chartAccountTypes  = ChartOfAccountType::where('workspace', getActiveWorkSpace())
-                    ->where('created_by', creatorId())
+                $chartAccountTypes  = ChartOfAccountType::forCompanyOrGlobal()
                     ->whereIn('name', ['Income'])
                     ->get();
             }
             elseif($category->type == 2){
-                $chartAccountTypes  = ChartOfAccountType::where('workspace', getActiveWorkSpace())
-                    ->where('created_by', creatorId())
+                $chartAccountTypes  = ChartOfAccountType::forCompanyOrGlobal()
                     ->whereIn('name', ['Expenses'])
                     ->get();
             }
@@ -185,20 +180,19 @@ class CategoryController extends Controller
             foreach ($chartAccountTypes as $chartAccountType)
             {
                 $chartAccounts = ChartOfAccount::select(\DB::raw('CONCAT(code, " - ", name) AS code_name, id'))
+                    ->forCompanyOrGlobal()
                     ->where('parent', '=', 0)
                     ->where('type', '=', $chartAccountType->id)
-                    ->where('workspace', getActiveWorkSpace())
-                    ->where('created_by', creatorId())->get()
+                    ->get()
                     ->pluck('code_name', 'id');
                 $chartAccounts->prepend('Select Account', 0);
 
 
                 $subAccounts = ChartOfAccount::select('chart_of_accounts.id', 'chart_of_accounts.code', 'chart_of_accounts.name', 'chart_of_account_parents.account');
                 $subAccounts->leftjoin('chart_of_account_parents', 'chart_of_accounts.parent', 'chart_of_account_parents.id');
-                $subAccounts->where('chart_of_accounts.parent', '!=', 0);
-                $subAccounts->where('chart_of_accounts.type', '=', $chartAccountType->id);
-                $subAccounts->where('chart_of_accounts.workspace', getActiveWorkSpace());
-                $subAccounts->where('chart_of_accounts.created_by', creatorId());
+                $subAccounts->forCompanyOrGlobal()
+                    ->where('chart_of_accounts.parent', '!=', 0)
+                    ->where('chart_of_accounts.type', '=', $chartAccountType->id);
                 $subAccounts = $subAccounts->get()->toArray();
             }
 

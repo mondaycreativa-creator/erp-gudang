@@ -40,7 +40,7 @@ class ProductServiceController extends Controller
     {
         if(Auth::user()->isAbleTo('product&service manage'))
         {
-            $category = Category::where('created_by', '=', creatorId())->where('workspace_id', '=', getActiveWorkSpace())->where('type', '=', 0)->get()->pluck('name', 'id');
+            $category = Category::forCompanyOrGlobal()->where('type', '=', 0)->pluck('name', 'id');
             $product_type = ProductService::$product_type;
             if(module_is_active('RentalManagement')) {
                 $product_type['rent'] = 'Rent';
@@ -54,8 +54,15 @@ class ProductServiceController extends Controller
                     ->crossJoin(DB::raw('(SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4) numbers'))
                     ->whereRaw('CHAR_LENGTH(product_services.tax_id) - CHAR_LENGTH(REPLACE(product_services.tax_id, ",", "")) + 1 >= numbers.n');
             })
-            ->where('product_services.created_by', creatorId())
-            ->where('product_services.workspace_id', getActiveWorkSpace())
+            ->where(function ($q) {
+                $saId = function_exists('superAdminId') ? superAdminId() : 1;
+                $q->where(function ($sub) {
+                    $sub->where('product_services.created_by', creatorId())
+                        ->where('product_services.workspace_id', getActiveWorkSpace());
+                })
+                ->orWhere('product_services.created_by', $saId)
+                ->orWhere('product_services.created_by', 1);
+            })
             ->groupBy('product_services.id');
             if (!empty($request->category))
             {
@@ -119,9 +126,9 @@ class ProductServiceController extends Controller
             $customFields = null;
         }
 
-        $category     = Category::where('created_by', '=',creatorId())->where('workspace_id', '=', getActiveWorkSpace())->where('type', '=', 0)->get()->pluck('name', 'id');
-        $unit         = Unit::where('created_by', '=',creatorId())->where('workspace_id', '=', getActiveWorkSpace())->get()->pluck('name', 'id');
-        $tax          = Tax::where('created_by', '=',creatorId())->where('workspace_id', '=', getActiveWorkSpace())->get()->pluck('name', 'id');
+        $category     = Category::forCompanyOrGlobal()->where('type', '=', 0)->pluck('name', 'id');
+        $unit         = Unit::forCompanyOrGlobal()->pluck('name', 'id');
+        $tax          = Tax::forCompanyOrGlobal()->pluck('name', 'id');
 
         if($type == 'product' || $type == 'parts')
         {
@@ -130,7 +137,15 @@ class ProductServiceController extends Controller
             $supplier_id = $request->supplier_id;
             $workorder_id = $request->workorder_id;
 
-            $warehouse = Warehouse::where('created_by', creatorId())->where('workspace', getActiveWorkSpace())->get()->pluck('name', 'id');
+            $saId = function_exists('superAdminId') ? superAdminId() : 1;
+            $warehouse = Warehouse::where(function($q) use ($saId) {
+                $q->where(function($sub) {
+                    $sub->where('created_by', creatorId())
+                        ->where('workspace', getActiveWorkSpace());
+                })
+                ->orWhere('created_by', $saId)
+                ->orWhere('created_by', 1);
+            })->pluck('name', 'id');
             $warehouse->prepend('Select Warehouse', '');
             $returnHTML = view('productservice::product_section', compact('category', 'type', 'unit', 'tax', 'warehouse','customFields','components_id','pms_id','supplier_id','workorder_id','productService','action'))->render();
             $response = [
@@ -446,7 +461,7 @@ class ProductServiceController extends Controller
     {
         if(Auth::user()->isAbleTo('product&service manage'))
         {
-            $category = Category::where('created_by', '=', creatorId())->where('workspace_id', '=', getActiveWorkSpace())->where('type', '=', 0)->get()->pluck('name', 'id');
+            $category = Category::forCompanyOrGlobal()->where('type', '=', 0)->pluck('name', 'id');
             $product_type = ProductService::$product_type;
             if(module_is_active('RentalManagement')) {
                 $product_type['rent'] = 'Rent';
@@ -460,8 +475,15 @@ class ProductServiceController extends Controller
                     ->crossJoin(DB::raw('(SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4) numbers'))
                     ->whereRaw('CHAR_LENGTH(product_services.tax_id) - CHAR_LENGTH(REPLACE(product_services.tax_id, ",", "")) + 1 >= numbers.n');
             })
-            ->where('product_services.created_by', creatorId())
-            ->where('product_services.workspace_id', getActiveWorkSpace())
+            ->where(function ($q) {
+                $saId = function_exists('superAdminId') ? superAdminId() : 1;
+                $q->where(function ($sub) {
+                    $sub->where('product_services.created_by', creatorId())
+                        ->where('product_services.workspace_id', getActiveWorkSpace());
+                })
+                ->orWhere('product_services.created_by', $saId)
+                ->orWhere('product_services.created_by', 1);
+            })
             ->groupBy('product_services.id');
             if (!empty($request->category))
             {
@@ -725,7 +747,7 @@ class ProductServiceController extends Controller
     {
         if(module_is_active('ProductService'))
         {
-            $taxs_data = \Modules\ProductService\Entities\Tax::whereIn('id',$request->tax_id)->where('workspace_id', getActiveWorkSpace())->select('id', 'name', 'rate')->get();
+            $taxs_data = \Modules\ProductService\Entities\Tax::whereIn('id', $request->tax_id)->select('id', 'name', 'rate')->get();
             return json_encode($taxs_data);
         }else{
             $taxs_data = [];

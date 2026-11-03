@@ -26,11 +26,19 @@ class VenderController extends Controller
     {
         if(Auth::user()->isAbleTo('vendor manage'))
         {
-            $vendors = User::where('workspace_id',getActiveWorkSpace())
-                        ->leftjoin('vendors', 'users.id', '=', 'vendors.user_id')
-                        ->where('users.type', 'vendor')
-                        ->select('users.*','vendors.*', 'users.name as name', 'users.email as email', 'users.id as id','users.mobile_no as contact')
-                        ->get();
+            $saId = function_exists('superAdminId') ? superAdminId() : 1;
+            $vendors = User::where(function($q) use ($saId) {
+                        $q->where(function($sub) {
+                            $sub->where('users.created_by', creatorId())
+                                ->where('users.workspace_id', getActiveWorkSpace());
+                        })
+                        ->orWhere('users.created_by', $saId)
+                        ->orWhere('users.created_by', 1);
+                    })
+                    ->leftjoin('vendors', 'users.id', '=', 'vendors.user_id')
+                    ->where('users.type', 'vendor')
+                    ->select('users.*','vendors.*', 'users.name as name', 'users.email as email', 'users.id as id','users.mobile_no as contact')
+                    ->get();
             return view('account::vendor.index', compact('vendors'));
         }
         else
@@ -417,11 +425,19 @@ class VenderController extends Controller
     {
         if(Auth::user()->isAbleTo('vendor manage'))
         {
-            $vendors = User::where('workspace_id',getActiveWorkSpace())
-                        ->leftjoin('vendors', 'users.id', '=', 'vendors.user_id')
-                        ->where('users.type', 'vendor')
-                        ->select('users.*','vendors.*', 'users.name as name', 'users.email as email', 'users.id as id')
-                        ->get();
+            $saId = function_exists('superAdminId') ? superAdminId() : 1;
+            $vendors = User::where(function($q) use ($saId) {
+                        $q->where(function($sub) {
+                            $sub->where('users.created_by', creatorId())
+                                ->where('users.workspace_id', getActiveWorkSpace());
+                        })
+                        ->orWhere('users.created_by', $saId)
+                        ->orWhere('users.created_by', 1);
+                    })
+                    ->leftjoin('vendors', 'users.id', '=', 'vendors.user_id')
+                    ->where('users.type', 'vendor')
+                    ->select('users.*','vendors.*', 'users.name as name', 'users.email as email', 'users.id as id')
+                    ->get();
             return view('account::vendor.grid', compact('vendors'));
         }
         else

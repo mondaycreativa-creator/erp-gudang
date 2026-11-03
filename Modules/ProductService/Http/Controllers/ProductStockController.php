@@ -18,7 +18,15 @@ class ProductStockController extends Controller
         if(\Auth::user()->isAbleTo('product&service manage'))
         {
 
-            $productServices = ProductService::where('created_by', '=', creatorId())->where('workspace_id', '=', getActiveWorkSpace())->where('type', '=', 'product')->get();
+            $productServices = ProductService::where(function($q) {
+                $saId = function_exists('superAdminId') ? superAdminId() : 1;
+                $q->where(function($sub) {
+                    $sub->where('created_by', '=', creatorId())
+                        ->where('workspace_id', '=', getActiveWorkSpace());
+                })
+                ->orWhere('created_by', $saId)
+                ->orWhere('created_by', 1);
+            })->where('type', '=', 'product')->get();
 
 
             return view('productservice::productstock.index', compact('productServices'));

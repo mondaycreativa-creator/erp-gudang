@@ -38,7 +38,7 @@ class PurchaseController extends Controller
         if (\Auth::user()->isAbleTo('purchase manage')) {
             $vender = [];
             if (module_is_active('Account')) {
-                $vender = \Modules\Account\Entities\Vender::where('created_by', creatorId())->where('workspace', getActiveWorkSpace())->get()->pluck('name', 'id');
+                $vender = \Modules\Account\Entities\Vender::forCompanyOrGlobal()->pluck('name', 'id');
                 $vender->prepend('Select Vendor', '');
             }
 
@@ -61,13 +61,13 @@ class PurchaseController extends Controller
                 $category = [];
                 $projects = [];
                 if (module_is_active('ProductService')) {
-                    $category = \Modules\ProductService\Entities\Category::where('created_by', creatorId())->where('workspace_id', getActiveWorkSpace())->where('type', 2)->get()->pluck('name', 'id');
+                    $category = \Modules\ProductService\Entities\Category::forCompanyOrGlobal()->where('type', 2)->pluck('name', 'id');
                     $category->prepend('Select Category', '');
                 }
 
                 if (module_is_active('Taskly')) {
                     if (module_is_active('ProductService')) {
-                        $taxs = \Modules\ProductService\Entities\Tax::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                        $taxs = \Modules\ProductService\Entities\Tax::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
                     }
                     $projects = \Modules\Taskly\Entities\Project::select('projects.*')->join('user_projects', 'projects.id', '=', 'user_projects.project_id')->where('user_projects.user_id', '=', Auth::user()->id)->where('workspace', getActiveWorkSpace())->projectonly()->get()->pluck('name', 'id');
                 }
@@ -82,17 +82,40 @@ class PurchaseController extends Controller
                 $venders = [];
                 if (module_is_active('Account')) {
 
-                    $venders = User::where('type', 'vendor')->where('created_by', creatorId())->where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                    $venders = User::where('type', 'vendor')->where(function($q) {
+                        $saId = function_exists('superAdminId') ? superAdminId() : 1;
+                        $q->where(function($sub) {
+                            $sub->where('created_by', creatorId())
+                                ->where('workspace_id', getActiveWorkSpace());
+                        })
+                        ->orWhere('created_by', $saId)
+                        ->orWhere('created_by', 1);
+                    })->get()->pluck('name', 'id');
                     $venders->prepend('Select Vendor', '');
                 }
 
-                $warehouse = Warehouse::where('created_by', creatorId())->where('workspace', getActiveWorkSpace())->get()->pluck('name', 'id');
+                $saId = function_exists('superAdminId') ? superAdminId() : 1;
+                $warehouse = Warehouse::where(function($q) use ($saId) {
+                    $q->where(function($sub) {
+                        $sub->where('created_by', creatorId())
+                            ->where('workspace', getActiveWorkSpace());
+                    })
+                    ->orWhere('created_by', $saId)
+                    ->orWhere('created_by', 1);
+                })->get()->pluck('name', 'id');
                 $warehouse->prepend('Select Warehouse', '');
 
                 $product_services = [];
                 $product_type = [];
                 if (module_is_active('ProductService')) {
-                    $product_services = \Modules\ProductService\Entities\ProductService::where('created_by', creatorId())->where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                    $product_services = \Modules\ProductService\Entities\ProductService::where(function($q) use ($saId) {
+                        $q->where(function($sub) {
+                            $sub->where('created_by', creatorId())
+                                ->where('workspace_id', getActiveWorkSpace());
+                        })
+                        ->orWhere('created_by', $saId)
+                        ->orWhere('created_by', 1);
+                    })->get()->pluck('name', 'id');
                     $product_services->prepend('Select Items', '');
                     $product_type = \Modules\ProductService\Entities\ProductService::$product_type;
                 }
@@ -434,17 +457,39 @@ class PurchaseController extends Controller
                     return redirect()->back()->with('error', __('Purchase Not Found.'));
                 }
                 $purchase = Purchase::find($idwww);
-                $category = \Modules\ProductService\Entities\Category::where('created_by', '=', creatorId())->where('workspace_id', getActiveWorkSpace())->where('type', 2)->get()->pluck('name', 'id');
+                $category = \Modules\ProductService\Entities\Category::forCompanyOrGlobal()->where('type', 2)->pluck('name', 'id');
                 $category->prepend('Select Category', '');
-                $warehouse = Warehouse::where('created_by', '=', creatorId())->where('workspace', getActiveWorkSpace())->get()->pluck('name', 'id');
+                $saId = function_exists('superAdminId') ? superAdminId() : 1;
+                $warehouse = Warehouse::where(function($q) use ($saId) {
+                    $q->where(function($sub) {
+                        $sub->where('created_by', creatorId())
+                            ->where('workspace', getActiveWorkSpace());
+                    })
+                    ->orWhere('created_by', $saId)
+                    ->orWhere('created_by', 1);
+                })->get()->pluck('name', 'id');
 
                 $purchase_number = Purchase::purchaseNumberFormat($purchase->purchase_id);
                 $venders = [];
                 if (module_is_active('Account')) {
-                    $venders = User::where('type', 'vendor')->where('created_by', creatorId())->where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                    $venders = User::where('type', 'vendor')->where(function($q) use ($saId) {
+                        $q->where(function($sub) {
+                            $sub->where('created_by', creatorId())
+                                ->where('workspace_id', getActiveWorkSpace());
+                        })
+                        ->orWhere('created_by', $saId)
+                        ->orWhere('created_by', 1);
+                    })->get()->pluck('name', 'id');
                 }
 
-                $product_services = \Modules\ProductService\Entities\ProductService::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                $product_services = \Modules\ProductService\Entities\ProductService::where(function($q) use ($saId) {
+                    $q->where(function($sub) {
+                        $sub->where('created_by', creatorId())
+                            ->where('workspace_id', getActiveWorkSpace());
+                    })
+                    ->orWhere('created_by', $saId)
+                    ->orWhere('created_by', 1);
+                })->get()->pluck('name', 'id');
 
                 if (module_is_active('CustomField')) {
                     $purchase->customField = \Modules\CustomField\Entities\CustomField::getData($purchase, 'pos', 'purchase');
@@ -1254,7 +1299,7 @@ class PurchaseController extends Controller
             $vender = [];
             if (module_is_active('Account')) {
 
-                $vender = \Modules\Account\Entities\Vender::where('created_by', creatorId())->where('workspace', getActiveWorkSpace())->get()->pluck('name', 'id');
+                $vender = \Modules\Account\Entities\Vender::forCompanyOrGlobal()->pluck('name', 'id');
                 $vender->prepend('Select Vendor', '');
             }
 

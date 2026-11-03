@@ -44,6 +44,34 @@ class Vender extends Model
     {
         return \Modules\Account\Database\factories\VenderFactory::new();
     }
+
+    public function scopeForCompanyOrGlobal($query)
+    {
+        $creator = creatorId();
+        $workspace = getActiveWorkSpace();
+        $saId = function_exists('superAdminId') ? superAdminId() : 1;
+
+        return $query->where(function ($q) use ($creator, $workspace, $saId) {
+            $q->where(function ($sub) use ($creator, $workspace) {
+                $sub->where('vendors.created_by', $creator)
+                    ->where('vendors.workspace', $workspace);
+            })
+            ->orWhere('vendors.created_by', $saId)
+            ->orWhere('vendors.created_by', 1);
+        });
+    }
+
+    public function scopeForWorkspaceOrGlobal($query)
+    {
+        $workspace = getActiveWorkSpace();
+        $saId = function_exists('superAdminId') ? superAdminId() : 1;
+
+        return $query->where(function ($q) use ($workspace, $saId) {
+            $q->where('vendors.workspace', $workspace)
+              ->orWhere('vendors.created_by', $saId)
+              ->orWhere('vendors.created_by', 1);
+        });
+    }
     public static function vendorNumberFormat($number)
     {
         $company_settings = getCompanyAllSetting();

@@ -163,17 +163,17 @@ class InvoiceController extends Controller
                         $isQuotation = true;
                     }
 
-                    $category = \Modules\ProductService\Entities\Category::where('created_by', '=', creatorId())->where('workspace_id', getActiveWorkSpace())->where('type', 1)->get()->pluck('name', 'id');
+                    $category = \Modules\ProductService\Entities\Category::forCompanyOrGlobal()->where('type', 1)->pluck('name', 'id');
                 }
                 if (module_is_active('Taskly')) {
                     if (module_is_active('ProductService')) {
-                        $taxs = \Modules\ProductService\Entities\Tax::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                        $taxs = \Modules\ProductService\Entities\Tax::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
                     }
                     $projects = \Modules\Taskly\Entities\Project::select('projects.*')->join('user_projects', 'projects.id', '=', 'user_projects.project_id')->where('user_projects.user_id', '=', Auth::user()->id)->where('workspace', getActiveWorkSpace())->projectonly()->get()->pluck('name', 'id');
                 }
                 if (module_is_active('LMS')) {
                     if (module_is_active('ProductService')) {
-                        $taxs = \Modules\ProductService\Entities\Tax::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                        $taxs = \Modules\ProductService\Entities\Tax::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
                     }
                 }
 
@@ -428,18 +428,18 @@ class InvoiceController extends Controller
                 $projects = [];
                 $taxs = [];
                 if (module_is_active('Account')) {
-                    $category = \Modules\ProductService\Entities\Category::where('created_by', '=', creatorId())->where('workspace_id', getActiveWorkSpace())->where('type', 1)->get()->pluck('name', 'id');
+                    $category = \Modules\ProductService\Entities\Category::forCompanyOrGlobal()->where('type', 1)->pluck('name', 'id');
                 }
                 if (module_is_active('Taskly')) {
                     if (module_is_active('ProductService')) {
-                        $taxs = \Modules\ProductService\Entities\Tax::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                        $taxs = \Modules\ProductService\Entities\Tax::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
                     }
                     $projects = \Modules\Taskly\Entities\Project::where('workspace', getActiveWorkSpace())->projectonly()->get()->pluck('name', 'id');
                 }
 
                 if (module_is_active('LMS')) {
                     if (module_is_active('ProductService')) {
-                        $taxs = \Modules\ProductService\Entities\Tax::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                        $taxs = \Modules\ProductService\Entities\Tax::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
                     }
                 }
 
@@ -1808,7 +1808,7 @@ class InvoiceController extends Controller
         } elseif ($type == "case" && module_is_active('LegalCaseManagement')) {
             $taxes = [];
             if (module_is_active('ProductService')) {
-                $taxes = \Modules\ProductService\Entities\Tax::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                $taxes = \Modules\ProductService\Entities\Tax::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
             }
             $taxes->prepend("Select Tax", '');
 
@@ -1823,10 +1823,18 @@ class InvoiceController extends Controller
         } elseif ($type == "sales" && module_is_active('Sales')) {
             $taxes = [];
             if (module_is_active('ProductService')) {
-                $taxes = \Modules\ProductService\Entities\Tax::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                $taxes = \Modules\ProductService\Entities\Tax::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
             }
             $taxes->prepend("Select Tax", '');
-            $items = \Modules\ProductService\Entities\ProductService::where('created_by', creatorId())->where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+            $items = \Modules\ProductService\Entities\ProductService::where(function($q) {
+                $saId = function_exists('superAdminId') ? superAdminId() : 1;
+                $q->where(function($sub) {
+                    $sub->where('created_by', creatorId())
+                        ->where('workspace_id', getActiveWorkSpace());
+                })
+                ->orWhere('created_by', $saId)
+                ->orWhere('created_by', 1);
+            })->pluck('name', 'id');
             $items->prepend('select', '');
             $returnHTML = view('sales::invoice.main', compact('taxes', 'acction', 'invoice', 'items', 'type'))->render();
             $response = [
@@ -1949,7 +1957,7 @@ class InvoiceController extends Controller
                     $taxes = explode(',', $value['tax']);
                     if (isset($taxes) && !empty($taxes)) {
                         if (module_is_active('ProductService')) {
-                            $taxs_data = Tax::whereIn('id', $taxes)->where('workspace_id', getActiveWorkSpace())->select('id', 'name', 'rate')->get();
+                            $taxs_data = Tax::whereIn('id', $taxes)->select('id', 'name', 'rate')->get();
                         }
                     }
                     foreach ($taxs_data as $tax) {

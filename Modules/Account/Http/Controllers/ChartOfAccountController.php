@@ -37,10 +37,10 @@ class ChartOfAccountController extends Controller
             $filter['endDateRange'] = $end;
 
 
-            $types = ChartOfAccountType::where('created_by', creatorId())->where('workspace', getActiveWorkSpace())->get();
+            $types = ChartOfAccountType::forCompanyOrGlobal()->get();
 
             $accounts = ChartOfAccount::with('subType', 'bankAccounts', 'invoicePayments', 'revenues', 'billAccounts', 'billPayments', 'payments')
-                ->where('workspace', getActiveWorkSpace())
+                ->forWorkspaceOrGlobal()
                 ->get();
             $chartAccounts = [];                                                                   
             foreach ($types as $type) {

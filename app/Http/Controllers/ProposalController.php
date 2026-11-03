@@ -153,15 +153,14 @@ class ProposalController extends Controller
                             return redirect()->back()->with('error', __('Something went wrong please try again!'));
                         }
                     }
-                    $category = \Modules\ProductService\Entities\Category::where('created_by', '=', creatorId())->where('workspace_id', getActiveWorkSpace())->where('type', 1)->get()->pluck
-                    ('name', 'id');
+                    $category = \Modules\ProductService\Entities\Category::forCompanyOrGlobal()->where('type', 1)->pluck('name', 'id');
                     $product_services = \Modules\ProductService\Entities\ProductService::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
                 }
                 if(module_is_active('Taskly'))
                 {
                     if(module_is_active('ProductService'))
                     {
-                        $taxs = \Modules\ProductService\Entities\Tax::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                        $taxs = \Modules\ProductService\Entities\Tax::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
                     }
                     $projects = \Modules\Taskly\Entities\Project::select('projects.*')->join('user_projects', 'projects.id', '=', 'user_projects.project_id')->where('user_projects.user_id', '=', Auth::user()->id)->where('workspace', getActiveWorkSpace())->projectonly()->get()->pluck('name', 'id');
                 }
@@ -467,7 +466,7 @@ class ProposalController extends Controller
                 {
                     if(module_is_active('ProductService'))
                     {
-                        $taxs = \Modules\ProductService\Entities\Tax::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                        $taxs = \Modules\ProductService\Entities\Tax::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
                     }
                     $projects = \Modules\Taskly\Entities\Project::where('workspace', getActiveWorkSpace())->projectonly()->get()->pluck('name', 'id');
                 }
@@ -1552,7 +1551,7 @@ class ProposalController extends Controller
         $taxs_data = [];
         if(module_is_active('ProductService'))
         {
-            $taxs_data = \Modules\ProductService\Entities\Tax::whereIn('id',$request->Taxid)->where('workspace_id', getActiveWorkSpace())->get();
+            $taxs_data = \Modules\ProductService\Entities\Tax::whereIn('id',$request->Taxid)->get();
         }
         return $taxs_data;
     }
@@ -1560,7 +1559,7 @@ class ProposalController extends Controller
 
         if(module_is_active('ProductService'))
         {
-            $taxs_data = \Modules\ProductService\Entities\Tax::whereIn('id',$request->tax_id)->where('workspace_id', getActiveWorkSpace())->get();
+            $taxs_data = \Modules\ProductService\Entities\Tax::whereIn('id',$request->tax_id)->get();
             return json_encode($taxs_data);
         }else{
             $taxs_data = [];

@@ -45,7 +45,7 @@ class BillController extends Controller
     {
 
         if (Auth::user()->isAbleTo('bill manage')) {
-            $vendor = Vender::where('workspace', '=', getActiveWorkSpace())->get()->pluck('name', 'id');
+            $vendor = Vender::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
 
             $status = Bill::$statues;
 
@@ -91,7 +91,7 @@ class BillController extends Controller
 
                 $bill_number = Bill::billNumberFormat($this->billNumber());
 
-                $vendors = Vender::where('workspace', '=', getActiveWorkSpace())->get()->pluck('name', 'id');
+                $vendors = Vender::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
 
                 $product_services = \Modules\ProductService\Entities\ProductService::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
                 $product_services->prepend('--', '');
@@ -104,7 +104,7 @@ class BillController extends Controller
                 $product_type = \Modules\ProductService\Entities\ProductService::$product_type;
                 if (module_is_active('Taskly')) {
                     if (module_is_active('ProductService')) {
-                        $taxs = \Modules\ProductService\Entities\Tax::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                        $taxs = \Modules\ProductService\Entities\Tax::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
 
                     }
                     $projects = \Modules\Taskly\Entities\Project::select('projects.*')->join('user_projects', 'projects.id', '=', 'user_projects.project_id')->where('user_projects.user_id', '=', Auth::user()->id)->where('workspace', getActiveWorkSpace())->projectonly()->get()->pluck('name', 'id');
@@ -362,7 +362,7 @@ class BillController extends Controller
 
                 $bill_number = Bill::billNumberFormat($bill->bill_id);
 
-                $vendors = Vender::where('workspace', '=', getActiveWorkSpace())->get()->pluck('name', 'id');
+                $vendors = Vender::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
 
                 $product_services = \Modules\ProductService\Entities\ProductService::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
 
@@ -376,7 +376,7 @@ class BillController extends Controller
                 $taxs = [];
                 if (module_is_active('Taskly')) {
                     if (module_is_active('ProductService')) {
-                        $taxs = \Modules\ProductService\Entities\Tax::where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
+                        $taxs = \Modules\ProductService\Entities\Tax::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
                     }
                     $projects = \Modules\Taskly\Entities\Project::where('workspace', getActiveWorkSpace())->projectonly()->get()->pluck('name', 'id');
                 }
@@ -776,7 +776,7 @@ class BillController extends Controller
     {
         if (Auth::user()->isAbleTo('bill payment create')) {
             $bill = Bill::where('id', $bill_id)->first();
-            $vendors = Vender::where('workspace', '=', getActiveWorkSpace())->get()->pluck('name', 'id');
+            $vendors = Vender::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
             $categories = \Modules\ProductService\Entities\Category::where('created_by', '=', creatorId())->where('workspace_id', getActiveWorkSpace())->get()->pluck('name', 'id');
             $accounts = BankAccount::select('*', \DB::raw("CONCAT(bank_name,' ',holder_name) AS name"))->where('workspace', getActiveWorkSpace())->get()->pluck('name', 'id');
 
@@ -1326,7 +1326,7 @@ class BillController extends Controller
     public function grid(Request $request)
     {
         if (\Auth::user()->isAbleTo('bill manage')) {
-            $vendor = Vender::where('workspace', '=', getActiveWorkSpace())->get()->pluck('name', 'id');
+            $vendor = Vender::forWorkspaceOrGlobal()->get()->pluck('name', 'id');
 
             $status = Bill::$statues;
 

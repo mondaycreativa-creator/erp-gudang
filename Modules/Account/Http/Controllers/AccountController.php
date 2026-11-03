@@ -79,9 +79,9 @@ class AccountController extends Controller
                 $constant['units'] = 0;
                 if(module_is_active('ProductService'))
                 {
-                    $constant['taxes']         = \Modules\ProductService\Entities\Tax::where('workspace_id', getActiveWorkSpace())->count();
-                    $constant['category']      = \Modules\ProductService\Entities\Category::where('created_by', '=', creatorId())->where('workspace_id', getActiveWorkSpace())->count();
-                    $constant['units']         = \Modules\ProductService\Entities\Unit::where('workspace_id', getActiveWorkSpace())->count();
+                    $constant['taxes']         = \Modules\ProductService\Entities\Tax::forWorkspaceOrGlobal()->count();
+                    $constant['category']      = \Modules\ProductService\Entities\Category::forCompanyOrGlobal()->count();
+                    $constant['units']         = \Modules\ProductService\Entities\Unit::forWorkspaceOrGlobal()->count();
                 }
                 $constant['bankAccount']   = \Modules\Account\Entities\BankAccount::where('workspace', getActiveWorkSpace())->count();
 

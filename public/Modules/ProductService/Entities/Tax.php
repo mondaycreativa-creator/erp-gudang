@@ -33,4 +33,32 @@ class Tax extends Model
 
         return $taxes;
     }
+
+    public function scopeForCompanyOrGlobal($query)
+    {
+        $creator = creatorId();
+        $workspace = getActiveWorkSpace();
+        $saId = function_exists('superAdminId') ? superAdminId() : 1;
+
+        return $query->where(function ($q) use ($creator, $workspace, $saId) {
+            $q->where(function ($sub) use ($creator, $workspace) {
+                $sub->where('created_by', $creator)
+                    ->where('workspace_id', $workspace);
+            })
+            ->orWhere('created_by', $saId)
+            ->orWhere('created_by', 1);
+        });
+    }
+
+    public function scopeForWorkspaceOrGlobal($query)
+    {
+        $workspace = getActiveWorkSpace();
+        $saId = function_exists('superAdminId') ? superAdminId() : 1;
+
+        return $query->where(function ($q) use ($workspace, $saId) {
+            $q->where('workspace_id', $workspace)
+              ->orWhere('created_by', $saId)
+              ->orWhere('created_by', 1);
+        });
+    }
 }

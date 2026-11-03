@@ -426,6 +426,18 @@ if (!function_exists('creatorId')) {
     }
 }
 
+if (!function_exists('superAdminId')) {
+    function superAdminId()
+    {
+        static $superAdminId = null;
+        if ($superAdminId === null) {
+            $sa = \App\Models\User::where('type', 'super admin')->first();
+            $superAdminId = $sa ? $sa->id : 1;
+        }
+        return $superAdminId;
+    }
+}
+
 
 if (!function_exists('getModuleList')) {
     function getModuleList()
