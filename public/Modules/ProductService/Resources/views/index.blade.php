@@ -85,8 +85,10 @@
                             <th >{{__('Image')}}</th>
                             <th >{{__('Name')}}</th>
                             <th >{{__('Sku')}}</th>
-                            <th>{{__('Sale Price')}}</th>
-                            <th>{{__('Purchase Price')}}</th>
+                            @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                                <th>{{__('Sale Price')}}</th>
+                                <th>{{__('Purchase Price')}}</th>
+                            @endif
                             <th>{{__('Tax')}}</th>
                             <th>{{__('Category')}}</th>
                             <th>{{__('Unit')}}</th>
@@ -114,8 +116,10 @@
                                 </td>
                                 <td class="text-center">{{ $productService->name}}</td>
                                 <td class="text-center">{{ $productService->sku }}</td>
-                                <td>{{ currency_format_with_sym($productService->sale_price) }}</td>
-                                <td>{{ currency_format_with_sym($productService->purchase_price )}}</td>
+                                @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                                    <td>{{ currency_format_with_sym($productService->sale_price) }}</td>
+                                    <td>{{ currency_format_with_sym($productService->purchase_price )}}</td>
+                                @endif
                                 <td>
                                     {!! str_replace(',', ',<br>', $productService->tax_names) !!}
                                 </td>

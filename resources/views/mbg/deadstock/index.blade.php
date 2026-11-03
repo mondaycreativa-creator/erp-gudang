@@ -58,8 +58,13 @@
                 <span class="text-danger small fw-bold d-block mb-1">
                     <i class="ti ti-alert-triangle me-1"></i> DEADSTOCK KRITIS (&ge; {{ $thresholdCritical }} Hari)
                 </span>
-                <h4 class="fw-bold mb-0 text-danger">Rp {{ number_format($totalCriticalValue, 0, ',', '.') }}</h4>
-                <small class="text-muted">{{ $criticalCount }} item bahan mengendap</small>
+                @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                    <h4 class="fw-bold mb-0 text-danger">Rp {{ number_format($totalCriticalValue, 0, ',', '.') }}</h4>
+                    <small class="text-muted">{{ $criticalCount }} item bahan mengendap</small>
+                @else
+                    <h4 class="fw-bold mb-0 text-danger">{{ $criticalCount }} Item</h4>
+                    <small class="text-muted">Bahan mengendap kritis</small>
+                @endif
             </div>
         </div>
     </div>
@@ -91,11 +96,19 @@
     <div class="col-md-3 mb-3">
         <div class="card h-100 border-0 shadow-sm border-start border-primary border-4">
             <div class="card-body p-3">
-                <span class="text-primary small fw-bold d-block mb-1">
-                    <i class="ti ti-archive me-1"></i> Total Nilai Aset di Gudang Ini
-                </span>
-                <h4 class="fw-bold mb-0 text-primary">Rp {{ number_format($totalDeadstockValue, 0, ',', '.') }}</h4>
-                <small class="text-muted">{{ count($deadstockList) }} varian bahan tersimpan</small>
+                @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                    <span class="text-primary small fw-bold d-block mb-1">
+                        <i class="ti ti-archive me-1"></i> Total Nilai Aset di Gudang Ini
+                    </span>
+                    <h4 class="fw-bold mb-0 text-primary">Rp {{ number_format($totalDeadstockValue, 0, ',', '.') }}</h4>
+                    <small class="text-muted">{{ count($deadstockList) }} varian bahan tersimpan</small>
+                @else
+                    <span class="text-primary small fw-bold d-block mb-1">
+                        <i class="ti ti-archive me-1"></i> Total Varian Bahan di Gudang Ini
+                    </span>
+                    <h4 class="fw-bold mb-0 text-primary">{{ count($deadstockList) }} Varian</h4>
+                    <small class="text-muted">Semua bahan terdaftar di gudang ini</small>
+                @endif
             </div>
         </div>
     </div>
@@ -122,8 +135,10 @@
                             <th>{{ __('Nama Bahan Makanan') }}</th>
                             <th>{{ __('Kategori MBG') }}</th>
                             <th>{{ __('Stok Saat Ini') }}</th>
-                            <th>{{ __('Harga Modal (Rp)') }}</th>
-                            <th>{{ __('Nilai Stok (Rp)') }}</th>
+                            @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                                <th>{{ __('Harga Modal (Rp)') }}</th>
+                                <th>{{ __('Nilai Stok (Rp)') }}</th>
+                            @endif
                             <th>{{ __('Terakhir Keluar') }}</th>
                             <th>{{ __('Lama Mengendap') }}</th>
                             <th>{{ __('Status Deadstock') }}</th>
@@ -139,8 +154,10 @@
                                 </td>
                                 <td><span class="badge bg-light text-dark border">{{ $item->category }}</span></td>
                                 <td class="fw-bold fs-6">{{ $item->quantity }} {{ $item->unit }}</td>
-                                <td>Rp {{ number_format($item->purchase_price, 0, ',', '.') }}</td>
-                                <td class="fw-bold">Rp {{ number_format($item->asset_value, 0, ',', '.') }}</td>
+                                @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                                    <td>Rp {{ number_format($item->purchase_price, 0, ',', '.') }}</td>
+                                    <td class="fw-bold">Rp {{ number_format($item->asset_value, 0, ',', '.') }}</td>
+                                @endif
                                 <td>{{ \Carbon\Carbon::parse($item->last_movement)->format('d M Y') }}</td>
                                 <td class="fw-bold fs-6">
                                     {{ $item->days_stagnant }} Hari
@@ -168,7 +185,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center py-4 text-muted">
+                                <td colspan="{{ (Auth::user()->type == 'super admin' || Auth::user()->type == 'company') ? 9 : 7 }}" class="text-center py-4 text-muted">
                                     Tidak ada stok tersimpan di gudang ini.
                                 </td>
                             </tr>
