@@ -20,33 +20,19 @@ class Warehouse extends Model
 
     public static function warehouse_id($warehouse_name)
     {
-        $saId = function_exists('superAdminId') ? superAdminId() : 1;
+        $allowedIds = function_exists('globalAdminUserIds') ? globalAdminUserIds() : [0, 1, 2];
         $warehouse = Warehouse::where('id', $warehouse_name)
-            ->where(function($q) use ($saId) {
-                $q->where(function($sub) {
-                    $sub->where('created_by', creatorId())
-                        ->where('workspace', getActiveWorkSpace());
-                })
-                ->orWhere('created_by', $saId)
-                ->orWhere('created_by', 1);
-            })->first();
+            ->whereIn('created_by', $allowedIds)->first();
+        if (!$warehouse) {
+            $warehouse = Warehouse::where('id', $warehouse_name)->first();
+        }
         return $warehouse ? $warehouse->id : 0;
     }
 
     public function scopeForCompanyOrGlobal($query)
     {
-        $creator = creatorId();
-        $workspace = getActiveWorkSpace();
-        $saId = function_exists('superAdminId') ? superAdminId() : 1;
-
-        return $query->where(function ($q) use ($creator, $workspace, $saId) {
-            $q->where(function ($sub) use ($creator, $workspace) {
-                $sub->where('created_by', $creator)
-                    ->where('workspace', $workspace);
-            })
-            ->orWhere('created_by', $saId)
-            ->orWhere('created_by', 1);
-        });
+        $allowedIds = function_exists('globalAdminUserIds') ? globalAdminUserIds() : [0, 1, 2];
+        return $query->whereIn('created_by', $allowedIds);
     }
 
     public static function defaultdata($company_id = null,$workspace_id = null)

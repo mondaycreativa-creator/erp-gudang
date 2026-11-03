@@ -438,6 +438,35 @@ if (!function_exists('superAdminId')) {
     }
 }
 
+if (!function_exists('globalAdminUserIds')) {
+    function globalAdminUserIds()
+    {
+        static $cachedIds = null;
+        if ($cachedIds === null) {
+            $adminIds = [];
+            try {
+                $adminIds = \App\Models\User::whereIn('type', ['super admin', 'company'])->pluck('id')->toArray();
+            } catch (\Exception $e) {
+                $adminIds = [1, 2];
+            }
+            $creator = 0;
+            if (function_exists('creatorId') && \Auth::check()) {
+                try {
+                    $creator = creatorId();
+                } catch (\Exception $e) {
+                    $creator = 0;
+                }
+            }
+            $authId = \Auth::check() ? \Auth::id() : 0;
+            $merged = array_merge([0, 1, 2], $adminIds, [$creator, $authId]);
+            $cachedIds = array_values(array_unique(array_filter($merged, function($v) {
+                return $v !== null && $v !== '';
+            })));
+        }
+        return $cachedIds;
+    }
+}
+
 
 if (!function_exists('getModuleList')) {
     function getModuleList()

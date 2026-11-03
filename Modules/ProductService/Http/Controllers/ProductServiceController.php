@@ -48,21 +48,14 @@ class ProductServiceController extends Controller
             if(module_is_active('MusicInstitute')) {
                 $product_type['music institute'] = 'Music Institute';
             }
+            $allowedIds = function_exists('globalAdminUserIds') ? globalAdminUserIds() : [0, 1, 2];
             $productServices = ProductService::select('product_services.*', DB::raw('GROUP_CONCAT(taxes.name) as tax_names'))
             ->leftJoin('taxes', function ($join) {
                 $join->on('taxes.id', '=', DB::raw("SUBSTRING_INDEX(SUBSTRING_INDEX(product_services.tax_id, ',', numbers.n), ',', -1)"))
                     ->crossJoin(DB::raw('(SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4) numbers'))
                     ->whereRaw('CHAR_LENGTH(product_services.tax_id) - CHAR_LENGTH(REPLACE(product_services.tax_id, ",", "")) + 1 >= numbers.n');
             })
-            ->where(function ($q) {
-                $saId = function_exists('superAdminId') ? superAdminId() : 1;
-                $q->where(function ($sub) {
-                    $sub->where('product_services.created_by', creatorId())
-                        ->where('product_services.workspace_id', getActiveWorkSpace());
-                })
-                ->orWhere('product_services.created_by', $saId)
-                ->orWhere('product_services.created_by', 1);
-            })
+            ->whereIn('product_services.created_by', $allowedIds)
             ->groupBy('product_services.id');
             if (!empty($request->category))
             {
@@ -137,15 +130,7 @@ class ProductServiceController extends Controller
             $supplier_id = $request->supplier_id;
             $workorder_id = $request->workorder_id;
 
-            $saId = function_exists('superAdminId') ? superAdminId() : 1;
-            $warehouse = Warehouse::where(function($q) use ($saId) {
-                $q->where(function($sub) {
-                    $sub->where('created_by', creatorId())
-                        ->where('workspace', getActiveWorkSpace());
-                })
-                ->orWhere('created_by', $saId)
-                ->orWhere('created_by', 1);
-            })->pluck('name', 'id');
+            $warehouse = Warehouse::forCompanyOrGlobal()->pluck('name', 'id');
             $warehouse->prepend('Select Warehouse', '');
             $returnHTML = view('productservice::product_section', compact('category', 'type', 'unit', 'tax', 'warehouse','customFields','components_id','pms_id','supplier_id','workorder_id','productService','action'))->render();
             $response = [
@@ -195,12 +180,12 @@ class ProductServiceController extends Controller
             $rules = [
                 'name' => 'required',
                 'sku' => 'required',
-                'sale_price' => 'required|numeric',
-                'purchase_price' => 'required|numeric',
+                'sale_price' => 'nullable|numeric',
+                'purchase_price' => 'nullable|numeric',
                 'category_id' => 'required',
                 'unit_id' => 'required',
                 'type' => 'required',
-                'tax_id' => 'required',
+                'tax_id' => 'nullable',
             ];
 
             $validator = \Validator::make($request->all(), $rules);
@@ -222,8 +207,8 @@ class ProductServiceController extends Controller
                 $productService->image          = empty($path) ? null : $path['url'];
             }
 
-            $productService->sale_price     = $request->sale_price;
-            $productService->purchase_price = $request->purchase_price;
+            $productService->sale_price     = !empty($request->sale_price) ? $request->sale_price : 0;
+            $productService->purchase_price = !empty($request->purchase_price) ? $request->purchase_price : 0;
             $productService->tax_id         = !empty($request->tax_id) ? implode(',', $request->tax_id) : '';
             $productService->unit_id        = $request->unit_id;
             if(!empty($request->quantity))
@@ -392,12 +377,12 @@ class ProductServiceController extends Controller
             $rules = [
                 'name' => 'required',
                 'sku' => 'required',
-                'sale_price' => 'required|numeric',
-                'purchase_price' => 'required|numeric',
+                'sale_price' => 'nullable|numeric',
+                'purchase_price' => 'nullable|numeric',
                 'category_id' => 'required',
                 'unit_id' => 'required',
                 'type' => 'required',
-                'tax_id' => 'required',
+                'tax_id' => 'nullable',
 
             ];
 
@@ -421,8 +406,8 @@ class ProductServiceController extends Controller
             $productService->name           = $request->name;
             $productService->description    = $request->description;
             $productService->sku            = $request->sku;
-            $productService->sale_price     = $request->sale_price;
-            $productService->purchase_price = $request->purchase_price;
+            $productService->sale_price     = isset($request->sale_price) && $request->sale_price !== '' ? $request->sale_price : ($productService->sale_price ?? 0);
+            $productService->purchase_price = isset($request->purchase_price) && $request->purchase_price !== '' ? $request->purchase_price : ($productService->purchase_price ?? 0);
             $productService->tax_id         = !empty($request->tax_id) ? implode(',', $request->tax_id) : '';
             $productService->unit_id        = $request->unit_id;
             $productService->quantity        = $request->quantity;
@@ -469,21 +454,14 @@ class ProductServiceController extends Controller
             if(module_is_active('MusicInstitute')) {
                 $product_type['music institute'] = 'Music Institute';
             }
+            $allowedIds = function_exists('globalAdminUserIds') ? globalAdminUserIds() : [0, 1, 2];
             $productServices = ProductService::select('product_services.*', DB::raw('GROUP_CONCAT(taxes.name) as tax_names'))
             ->leftJoin('taxes', function ($join) {
                 $join->on('taxes.id', '=', DB::raw("SUBSTRING_INDEX(SUBSTRING_INDEX(product_services.tax_id, ',', numbers.n), ',', -1)"))
                     ->crossJoin(DB::raw('(SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4) numbers'))
                     ->whereRaw('CHAR_LENGTH(product_services.tax_id) - CHAR_LENGTH(REPLACE(product_services.tax_id, ",", "")) + 1 >= numbers.n');
             })
-            ->where(function ($q) {
-                $saId = function_exists('superAdminId') ? superAdminId() : 1;
-                $q->where(function ($sub) {
-                    $sub->where('product_services.created_by', creatorId())
-                        ->where('product_services.workspace_id', getActiveWorkSpace());
-                })
-                ->orWhere('product_services.created_by', $saId)
-                ->orWhere('product_services.created_by', 1);
-            })
+            ->whereIn('product_services.created_by', $allowedIds)
             ->groupBy('product_services.id');
             if (!empty($request->category))
             {

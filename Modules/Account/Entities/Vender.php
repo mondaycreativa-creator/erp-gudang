@@ -47,30 +47,14 @@ class Vender extends Model
 
     public function scopeForCompanyOrGlobal($query)
     {
-        $creator = creatorId();
-        $workspace = getActiveWorkSpace();
-        $saId = function_exists('superAdminId') ? superAdminId() : 1;
-
-        return $query->where(function ($q) use ($creator, $workspace, $saId) {
-            $q->where(function ($sub) use ($creator, $workspace) {
-                $sub->where('vendors.created_by', $creator)
-                    ->where('vendors.workspace', $workspace);
-            })
-            ->orWhere('vendors.created_by', $saId)
-            ->orWhere('vendors.created_by', 1);
-        });
+        $allowedIds = function_exists('globalAdminUserIds') ? globalAdminUserIds() : [0, 1, 2];
+        return $query->whereIn('vendors.created_by', $allowedIds);
     }
 
     public function scopeForWorkspaceOrGlobal($query)
     {
-        $workspace = getActiveWorkSpace();
-        $saId = function_exists('superAdminId') ? superAdminId() : 1;
-
-        return $query->where(function ($q) use ($workspace, $saId) {
-            $q->where('vendors.workspace', $workspace)
-              ->orWhere('vendors.created_by', $saId)
-              ->orWhere('vendors.created_by', 1);
-        });
+        $allowedIds = function_exists('globalAdminUserIds') ? globalAdminUserIds() : [0, 1, 2];
+        return $query->whereIn('vendors.created_by', $allowedIds);
     }
     public static function vendorNumberFormat($number)
     {

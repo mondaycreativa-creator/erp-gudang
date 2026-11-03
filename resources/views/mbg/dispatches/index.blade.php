@@ -9,11 +9,13 @@
 @endsection
 
 @section('page-action')
+    @if(empty($userWhId))
     <div>
         <a href="{{ route('mbg.dispatches.create') }}" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" title="{{ __('Kirim Stok Baru') }}">
             <i class="ti ti-plus"></i> {{ __('Buat Pengiriman Mingguan') }}
         </a>
     </div>
+    @endif
 @endsection
 
 @section('content')
@@ -26,16 +28,22 @@
                         <div class="row align-items-center">
                             <div class="col-md-4">
                                 <label class="form-label text-muted small mb-1">{{ __('Gudang SPPG Tujuan') }}</label>
-                                <select name="to_warehouse_id" class="form-select form-select-sm">
-                                    <option value="">-- Semua SPPG --</option>
-                                    @foreach($warehouses as $wh)
-                                        @if(str_contains($wh->name, 'SPPG'))
-                                            <option value="{{ $wh->id }}" {{ request('to_warehouse_id') == $wh->id ? 'selected' : '' }}>
-                                                {{ $wh->name }}
-                                            </option>
-                                        @endif
-                                    @endforeach
-                                </select>
+                                @if(!empty($userWhId))
+                                    @php $currentWh = $warehouses->firstWhere('id', $userWhId); @endphp
+                                    <input type="text" class="form-control form-control-sm bg-light" value="{{ $currentWh ? $currentWh->name : 'Unit SPPG Anda' }}" readonly>
+                                    <input type="hidden" name="to_warehouse_id" value="{{ $userWhId }}">
+                                @else
+                                    <select name="to_warehouse_id" class="form-select form-select-sm">
+                                        <option value="">-- Semua SPPG --</option>
+                                        @foreach($warehouses as $wh)
+                                            @if(str_contains($wh->name, 'SPPG'))
+                                                <option value="{{ $wh->id }}" {{ request('to_warehouse_id') == $wh->id ? 'selected' : '' }}>
+                                                    {{ $wh->name }}
+                                                </option>
+                                            @endif
+                                        @endforeach
+                                    </select>
+                                @endif
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label text-muted small mb-1">{{ __('Hari Pengiriman') }}</label>

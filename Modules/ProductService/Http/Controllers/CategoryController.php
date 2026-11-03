@@ -50,39 +50,61 @@ class CategoryController extends Controller
 
             if($types == 1)
             {
-                $chartAccountTypes  = ChartOfAccountType::forCompanyOrGlobal()
-                    ->whereIn('name', ['Income'])
+                $chartAccountTypes = ChartOfAccountType::forCompanyOrGlobal()
+                    ->where(function($q) {
+                        $q->whereIn('name', ['Income', 'pendapatan'])
+                          ->orWhereRaw('LOWER(name) LIKE ?', ['%income%']);
+                    })
                     ->get();
             }
             elseif($types == 2){
-                $chartAccountTypes  = ChartOfAccountType::forCompanyOrGlobal()
-                    ->whereIn('name', ['Expenses'])
+                $chartAccountTypes = ChartOfAccountType::forCompanyOrGlobal()
+                    ->where(function($q) {
+                        $q->whereIn('name', ['Expenses', 'Expense', 'biaya', 'pengeluaran'])
+                          ->orWhereRaw('LOWER(name) LIKE ?', ['%expense%']);
+                    })
                     ->get();
             }
             else{
-                $chartAccountTypes =[];
+                $chartAccountTypes = [];
             }
 
             $chartAccounts = [];
             $subAccounts = [];
 
-            foreach ($chartAccountTypes as $chartAccountType)
-            {
-                $chartAccounts = ChartOfAccount::select(\DB::raw('CONCAT(code, " - ", name) AS code_name, id'))
+            if (!empty($chartAccountTypes) && count($chartAccountTypes) > 0) {
+                foreach ($chartAccountTypes as $chartAccountType)
+                {
+                    $accounts = ChartOfAccount::select(\DB::raw('CONCAT(code, " - ", name) AS code_name, id'))
+                        ->forCompanyOrGlobal()
+                        ->where('type', '=', $chartAccountType->id)
+                        ->get()
+                        ->pluck('code_name', 'id');
+                    foreach ($accounts as $accId => $accName) {
+                        $chartAccounts[$accId] = $accName;
+                    }
+
+                    $subs = ChartOfAccount::select('chart_of_accounts.id', 'chart_of_accounts.code', 'chart_of_accounts.name', 'chart_of_account_parents.account')
+                        ->leftjoin('chart_of_account_parents', 'chart_of_accounts.parent', 'chart_of_account_parents.id')
+                        ->forCompanyOrGlobal()
+                        ->where('chart_of_accounts.type', '=', $chartAccountType->id)
+                        ->get()->toArray();
+                    $subAccounts = array_merge($subAccounts, $subs);
+                }
+            }
+
+            if (empty($chartAccounts) && $types != 0) {
+                $allAccs = ChartOfAccount::select(\DB::raw('CONCAT(code, " - ", name) AS code_name, id'))
                     ->forCompanyOrGlobal()
-                    ->where('parent', '=', 0)
-                    ->where('type', '=', $chartAccountType->id)
                     ->get()
                     ->pluck('code_name', 'id');
-                $chartAccounts->prepend('Select Account', 0);
-
-                $subAccounts = ChartOfAccount::select('chart_of_accounts.id', 'chart_of_accounts.code', 'chart_of_accounts.name', 'chart_of_account_parents.account');
-                $subAccounts->leftjoin('chart_of_account_parents', 'chart_of_accounts.parent', 'chart_of_account_parents.id');
-                $subAccounts->forCompanyOrGlobal()
-                    ->where('chart_of_accounts.parent', '!=', 0)
-                    ->where('chart_of_accounts.type', '=', $chartAccountType->id);
-                $subAccounts = $subAccounts->get()->toArray();
+                foreach ($allAccs as $accId => $accName) {
+                    $chartAccounts[$accId] = $accName;
+                }
             }
+
+            $chartAccounts = collect($chartAccounts);
+            $chartAccounts->prepend('Select Account', 0);
 
             return view('productservice::category.create',compact('types','chartAccounts','subAccounts'));
         }
@@ -159,42 +181,61 @@ class CategoryController extends Controller
 
             if($category->type == 1)
             {
-
-                $chartAccountTypes  = ChartOfAccountType::forCompanyOrGlobal()
-                    ->whereIn('name', ['Income'])
+                $chartAccountTypes = ChartOfAccountType::forCompanyOrGlobal()
+                    ->where(function($q) {
+                        $q->whereIn('name', ['Income', 'pendapatan'])
+                          ->orWhereRaw('LOWER(name) LIKE ?', ['%income%']);
+                    })
                     ->get();
             }
             elseif($category->type == 2){
-                $chartAccountTypes  = ChartOfAccountType::forCompanyOrGlobal()
-                    ->whereIn('name', ['Expenses'])
+                $chartAccountTypes = ChartOfAccountType::forCompanyOrGlobal()
+                    ->where(function($q) {
+                        $q->whereIn('name', ['Expenses', 'Expense', 'biaya', 'pengeluaran'])
+                          ->orWhereRaw('LOWER(name) LIKE ?', ['%expense%']);
+                    })
                     ->get();
             }
             else{
-                $chartAccountTypes =[];
+                $chartAccountTypes = [];
             }
-
 
             $chartAccounts = [];
             $subAccounts = [];
 
-            foreach ($chartAccountTypes as $chartAccountType)
-            {
-                $chartAccounts = ChartOfAccount::select(\DB::raw('CONCAT(code, " - ", name) AS code_name, id'))
+            if (!empty($chartAccountTypes) && count($chartAccountTypes) > 0) {
+                foreach ($chartAccountTypes as $chartAccountType)
+                {
+                    $accounts = ChartOfAccount::select(\DB::raw('CONCAT(code, " - ", name) AS code_name, id'))
+                        ->forCompanyOrGlobal()
+                        ->where('type', '=', $chartAccountType->id)
+                        ->get()
+                        ->pluck('code_name', 'id');
+                    foreach ($accounts as $accId => $accName) {
+                        $chartAccounts[$accId] = $accName;
+                    }
+
+                    $subs = ChartOfAccount::select('chart_of_accounts.id', 'chart_of_accounts.code', 'chart_of_accounts.name', 'chart_of_account_parents.account')
+                        ->leftjoin('chart_of_account_parents', 'chart_of_accounts.parent', 'chart_of_account_parents.id')
+                        ->forCompanyOrGlobal()
+                        ->where('chart_of_accounts.type', '=', $chartAccountType->id)
+                        ->get()->toArray();
+                    $subAccounts = array_merge($subAccounts, $subs);
+                }
+            }
+
+            if (empty($chartAccounts) && $category->type != 0) {
+                $allAccs = ChartOfAccount::select(\DB::raw('CONCAT(code, " - ", name) AS code_name, id'))
                     ->forCompanyOrGlobal()
-                    ->where('parent', '=', 0)
-                    ->where('type', '=', $chartAccountType->id)
                     ->get()
                     ->pluck('code_name', 'id');
-                $chartAccounts->prepend('Select Account', 0);
-
-
-                $subAccounts = ChartOfAccount::select('chart_of_accounts.id', 'chart_of_accounts.code', 'chart_of_accounts.name', 'chart_of_account_parents.account');
-                $subAccounts->leftjoin('chart_of_account_parents', 'chart_of_accounts.parent', 'chart_of_account_parents.id');
-                $subAccounts->forCompanyOrGlobal()
-                    ->where('chart_of_accounts.parent', '!=', 0)
-                    ->where('chart_of_accounts.type', '=', $chartAccountType->id);
-                $subAccounts = $subAccounts->get()->toArray();
+                foreach ($allAccs as $accId => $accName) {
+                    $chartAccounts[$accId] = $accName;
+                }
             }
+
+            $chartAccounts = collect($chartAccounts);
+            $chartAccounts->prepend('Select Account', 0);
 
             return view('productservice::category.edit', compact('category','chartAccounts','subAccounts'));
         }

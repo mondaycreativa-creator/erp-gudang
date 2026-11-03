@@ -97,24 +97,34 @@
                         <div class="tab-pane fade" id="pricing-tab" role="tabpanel" aria-labelledby="pills-user-tab-2">
 
                             <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        {{ Form::label('sale_price', __('Sale Price'), ['class' => 'form-label']) }}<span
-                                            class="text-danger">*</span>
-                                        <div class="form-icon-user">
-                                            {{ Form::number('sale_price',!empty($productService->sale_price)?$productService->sale_price:'', ['class' => 'form-control', 'step' => '0.01']) }}
+                                @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            {{ Form::label('sale_price', __('Sale Price'), ['class' => 'form-label']) }}<span
+                                                class="text-danger">*</span>
+                                            <div class="form-icon-user">
+                                                {{ Form::number('sale_price',!empty($productService->sale_price)?$productService->sale_price:'', ['class' => 'form-control', 'step' => '0.01']) }}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        {{ Form::label('purchase_price', __('Purchase Price'), ['class' => 'form-label']) }}<span
-                                            class="text-danger">*</span>
-                                        <div class="form-icon-user">
-                                            {{ Form::number('purchase_price', !empty($productService->sale_price)?$productService->sale_price:'', ['class' => 'form-control', 'step' => '0.01']) }}
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            {{ Form::label('purchase_price', __('Purchase Price'), ['class' => 'form-label']) }}<span
+                                                class="text-danger">*</span>
+                                            <div class="form-icon-user">
+                                                {{ Form::number('purchase_price', !empty($productService->purchase_price)?$productService->purchase_price:'', ['class' => 'form-control', 'step' => '0.01']) }}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                @else
+                                    <input type="hidden" name="sale_price" value="{{ !empty($productService->sale_price) ? $productService->sale_price : 0 }}">
+                                    <input type="hidden" name="purchase_price" value="{{ !empty($productService->purchase_price) ? $productService->purchase_price : 0 }}">
+                                    <div class="col-12 mb-2">
+                                        <div class="alert alert-light border py-2 px-3 small text-muted">
+                                            <i class="ti ti-info-circle me-1 text-primary"></i> {{ __('Harga bahan/produk dikelola secara terpusat oleh Super Admin. Anda hanya perlu menentukan Satuan dan Kuantitas awal.') }}
+                                        </div>
+                                    </div>
+                                @endif
                                 @stack('add_column_in_productservice')
                                 <div class="form-group col-md-6">
                                     {{ Form::label('unit_id', __('Unit'), ['class' => 'form-label']) }}<span

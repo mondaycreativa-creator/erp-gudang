@@ -41,11 +41,15 @@ class MbgController extends Controller
     public function dispatches(Request $request)
     {
         $workspace = getActiveWorkSpace();
+        $userWhId = $this->getUserSppgWarehouseId();
         $query = MbgDispatch::where('workspace', $workspace)->with(['fromWarehouse', 'toWarehouse', 'items.product']);
 
-        if ($request->filled('to_warehouse_id')) {
+        if ($userWhId) {
+            $query->where('to_warehouse_id', $userWhId);
+        } elseif ($request->filled('to_warehouse_id')) {
             $query->where('to_warehouse_id', $request->to_warehouse_id);
         }
+
         if ($request->filled('delivery_day')) {
             $query->where('delivery_day', $request->delivery_day);
         }
@@ -57,9 +61,13 @@ class MbgController extends Controller
         }
 
         $dispatches = $query->orderBy('delivery_date', 'desc')->get();
-        $warehouses = Warehouse::where('workspace', $workspace)->get();
+        if ($userWhId) {
+            $warehouses = Warehouse::where('id', $userWhId)->get();
+        } else {
+            $warehouses = Warehouse::where('workspace', $workspace)->get();
+        }
 
-        return view('mbg.dispatches.index', compact('dispatches', 'warehouses'));
+        return view('mbg.dispatches.index', compact('dispatches', 'warehouses', 'userWhId'));
     }
 
     public function createDispatch()

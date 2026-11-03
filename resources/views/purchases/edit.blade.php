@@ -685,7 +685,11 @@
                                     </td>
                                     <td>
                                         <div class="form-group price-input input-group search-form">
-                                            {{ Form::text('price', null, ['class' => 'form-control price', 'required' => 'required', 'placeholder' => __('Price'), 'required' => 'required']) }}
+                                            @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                                                {{ Form::text('price', null, ['class' => 'form-control price', 'required' => 'required', 'placeholder' => __('Price')]) }}
+                                            @else
+                                                {{ Form::text('price', null, ['class' => 'form-control price', 'readonly' => 'readonly', 'style' => 'background-color: #f1f3f5; cursor: not-allowed;', 'placeholder' => __('Price')]) }}
+                                            @endif
                                             <span class="input-group-text bg-transparent">{{ $currancy_symbol }}</span>
                                         </div>
                                     </td>
