@@ -467,6 +467,44 @@ if (!function_exists('globalAdminUserIds')) {
     }
 }
 
+if (!function_exists('terbilang')) {
+    function terbilang($number)
+    {
+        $num = abs((float)$number);
+        if ($num == 0) {
+            return "Nol";
+        }
+        $words = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+        
+        $calc = function ($n) use (&$calc, $words) {
+            $n = (float)$n;
+            if ($n < 12) {
+                return " " . $words[(int)$n];
+            } elseif ($n < 20) {
+                return $calc($n - 10) . " Belas";
+            } elseif ($n < 100) {
+                return $calc((int)($n / 10)) . " Puluh" . $calc(fmod($n, 10));
+            } elseif ($n < 200) {
+                return " Seratus" . $calc($n - 100);
+            } elseif ($n < 1000) {
+                return $calc((int)($n / 100)) . " Ratus" . $calc(fmod($n, 100));
+            } elseif ($n < 2000) {
+                return " Seribu" . $calc($n - 1000);
+            } elseif ($n < 1000000) {
+                return $calc((int)($n / 1000)) . " Ribu" . $calc(fmod($n, 1000));
+            } elseif ($n < 1000000000) {
+                return $calc((int)($n / 1000000)) . " Juta" . $calc(fmod($n, 1000000));
+            } elseif ($n < 1000000000000) {
+                return $calc((int)($n / 1000000000)) . " Miliar" . $calc(fmod($n, 1000000000));
+            } else {
+                return $calc((int)($n / 1000000000000)) . " Triliun" . $calc(fmod($n, 1000000000000));
+            }
+        };
+
+        return trim(preg_replace('/\s+/', ' ', $calc($num)));
+    }
+}
+
 
 if (!function_exists('getModuleList')) {
     function getModuleList()
