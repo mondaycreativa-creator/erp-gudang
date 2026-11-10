@@ -86,7 +86,9 @@
                                 <th>{{ __('Gudang Asal') }}</th>
                                 <th>{{ __('SPPG Penerima') }}</th>
                                 <th>{{ __('Jenis Bahan') }}</th>
-                                <th>{{ __('Total Nilai Transfer') }}</th>
+                                @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
+                                    <th>{{ __('Total Nilai Transfer') }}</th>
+                                @endif
                                 <th>{{ __('Catatan') }}</th>
                                 <th class="text-center">{{ __('Aksi') }}</th>
                             </tr>
@@ -114,7 +116,9 @@
                                         </span>
                                     </td>
                                     <td>{{ $dispatch->items->count() }} macam</td>
-                                    <td class="fw-bold text-primary">Rp {{ number_format($dispatch->total_cost, 0, ',', '.') }}</td>
+                                    @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
+                                        <td class="fw-bold text-primary">Rp {{ number_format($dispatch->total_cost, 0, ',', '.') }}</td>
+                                    @endif
                                     <td class="text-muted small">{{ $dispatch->notes ?: '-' }}</td>
                                     <td class="text-center">
                                         <div class="d-flex align-items-center justify-content-center gap-1">

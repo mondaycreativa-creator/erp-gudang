@@ -505,6 +505,42 @@ if (!function_exists('terbilang')) {
     }
 }
 
+if (!function_exists('isAdminDapur')) {
+    function isAdminDapur($user = null)
+    {
+        if (!$user) {
+            $user = \Auth::user();
+        }
+        if (!$user) {
+            return false;
+        }
+        $type = strtolower($user->type ?? '');
+        return str_contains($type, 'sppg') || str_contains($type, 'dapur') || str_contains($type, 'asisten lapangan');
+    }
+}
+
+if (!function_exists('canManagePrices')) {
+    function canManagePrices($user = null)
+    {
+        if (!$user) {
+            $user = \Auth::user();
+        }
+        if (!$user) {
+            return false;
+        }
+        // Admin Dapur / SPPG / Asisten Lapangan cannot manage/view prices
+        if (isAdminDapur($user)) {
+            return false;
+        }
+        $type = strtolower($user->type ?? '');
+        // Super admin, company, and Admin Koperasi CAN manage & view prices!
+        if (in_array($user->type, ['super admin', 'company', 'Admin Koperasi']) || str_contains($type, 'koperasi') || str_contains($type, 'super admin') || str_contains($type, 'company')) {
+            return true;
+        }
+        return true;
+    }
+}
+
 
 if (!function_exists('getModuleList')) {
     function getModuleList()

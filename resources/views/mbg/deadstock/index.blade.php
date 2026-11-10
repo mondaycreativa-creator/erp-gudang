@@ -58,7 +58,7 @@
                 <span class="text-danger small fw-bold d-block mb-1">
                     <i class="ti ti-alert-triangle me-1"></i> DEADSTOCK KRITIS (&ge; {{ $thresholdCritical }} Hari)
                 </span>
-                @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
                     <h4 class="fw-bold mb-0 text-danger">Rp {{ number_format($totalCriticalValue, 0, ',', '.') }}</h4>
                     <small class="text-muted">{{ $criticalCount }} item bahan mengendap</small>
                 @else
@@ -96,7 +96,7 @@
     <div class="col-md-3 mb-3">
         <div class="card h-100 border-0 shadow-sm border-start border-primary border-4">
             <div class="card-body p-3">
-                @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
                     <span class="text-primary small fw-bold d-block mb-1">
                         <i class="ti ti-archive me-1"></i> Total Nilai Aset di Gudang Ini
                     </span>
@@ -135,7 +135,7 @@
                             <th>{{ __('Nama Bahan Makanan') }}</th>
                             <th>{{ __('Kategori MBG') }}</th>
                             <th>{{ __('Stok Saat Ini') }}</th>
-                            @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                            @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
                                 <th>{{ __('Harga Modal (Rp)') }}</th>
                                 <th>{{ __('Nilai Stok (Rp)') }}</th>
                             @endif
@@ -154,7 +154,7 @@
                                 </td>
                                 <td><span class="badge bg-light text-dark border">{{ $item->category }}</span></td>
                                 <td class="fw-bold fs-6">{{ $item->quantity }} {{ $item->unit }}</td>
-                                @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                                @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
                                     <td>Rp {{ number_format($item->purchase_price, 0, ',', '.') }}</td>
                                     <td class="fw-bold">Rp {{ number_format($item->asset_value, 0, ',', '.') }}</td>
                                 @endif
@@ -185,7 +185,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ (Auth::user()->type == 'super admin' || Auth::user()->type == 'company') ? 9 : 7 }}" class="text-center py-4 text-muted">
+                                <td colspan="{{ ((function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi')) ? 9 : 7) }}" class="text-center py-4 text-muted">
                                     Tidak ada stok tersimpan di gudang ini.
                                 </td>
                             </tr>

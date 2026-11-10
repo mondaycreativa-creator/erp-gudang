@@ -406,7 +406,7 @@
                                     </th>
                                 @endforeach
                                 <th style="width: 11%;" class="text-center">{{ __('Total Stok') }}</th>
-                                @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                                @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
                                     <th style="width: 13%;" class="text-end">{{ __('Nilai Aset') }}</th>
                                 @endif
                             </tr>
@@ -441,7 +441,7 @@
                                             <span class="badge bg-success px-2 py-1" style="font-size: 0.74rem;">{{ number_format($item->total_stock, 1, ',', '.') }}</span>
                                         @endif
                                     </td>
-                                    @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                                    @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
                                         <td class="text-end fw-bold text-dark py-2 text-nowrap" style="font-size: 0.82rem;">
                                             Rp {{ number_format($item->total_asset, 0, ',', '.') }}
                                         </td>
@@ -449,7 +449,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' ? 4 : 3) + count($sppgWarehouses) }}" class="text-center py-4 text-muted">Belum ada data bahan makanan terdaftar.</td>
+                                    <td colspan="{{ ((function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi')) ? 4 : 3) + count($sppgWarehouses) }}" class="text-center py-4 text-muted">Belum ada data bahan makanan terdaftar.</td>
                                 </tr>
                             @endforelse
                         </tbody>

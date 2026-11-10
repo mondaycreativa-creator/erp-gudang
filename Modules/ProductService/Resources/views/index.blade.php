@@ -85,7 +85,7 @@
                             <th >{{__('Image')}}</th>
                             <th >{{__('Name')}}</th>
                             <th >{{__('Sku')}}</th>
-                            @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                            @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
                                 <th>{{__('Sale Price')}}</th>
                                 <th>{{__('Purchase Price')}}</th>
                             @endif
@@ -116,7 +116,7 @@
                                 </td>
                                 <td class="text-center">{{ $productService->name}}</td>
                                 <td class="text-center">{{ $productService->sku }}</td>
-                                @if(Auth::user()->type == 'super admin' || Auth::user()->type == 'company')
+                                @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
                                     <td>{{ currency_format_with_sym($productService->sale_price) }}</td>
                                     <td>{{ currency_format_with_sym($productService->purchase_price )}}</td>
                                 @endif
