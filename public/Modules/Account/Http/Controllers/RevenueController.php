@@ -69,9 +69,9 @@ class RevenueController extends Controller
                 if (!empty($request->payment)) {
                     $query->where('revenues.payment_method', '=', $request->payment);
                 }
-                $query = $query->join('customers', 'revenues.customer_id', '=', 'customers.id')
-                        ->join('bank_accounts', 'revenues.account_id', '=', 'bank_accounts.id')
-                        ->join('categories', 'revenues.category_id', '=', 'categories.id');
+                $query = $query->leftJoin('customers', 'revenues.customer_id', '=', 'customers.id')
+                        ->leftJoin('bank_accounts', 'revenues.account_id', '=', 'bank_accounts.id')
+                        ->leftJoin('categories', 'revenues.category_id', '=', 'categories.id');
                 $revenues = $query->get();
                 return view('account::revenue.index', compact('revenues', 'customer', 'account', 'category'));
             }
@@ -141,7 +141,7 @@ class RevenueController extends Controller
             $revenue->amount         = $request->amount;
             $revenue->account_id     = $request->account_id;
             $revenue->customer_id    = $request->customer_id;
-            $revenue->user_id        = $customer->user_id;
+            $revenue->user_id        = $customer ? $customer->user_id : null;
             $revenue->category_id    = $request->category_id;
             $revenue->payment_method = 0;
             $revenue->reference      = $request->reference;
@@ -301,7 +301,7 @@ class RevenueController extends Controller
             $revenue->amount         = $request->amount;
             $revenue->account_id     = $request->account_id;
             $revenue->customer_id    = $request->customer_id;
-            $revenue->user_id        = $customer->user_id;
+            $revenue->user_id        = $customer ? $customer->user_id : null;
             $revenue->category_id    = $request->category_id;
             $revenue->payment_method = 0;
             $revenue->reference      = $request->reference;

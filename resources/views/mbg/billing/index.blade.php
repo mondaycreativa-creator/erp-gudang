@@ -195,75 +195,6 @@
                                     </button>
                                 </td>
                             </tr>
-
-                            <!-- Modal Update Pembayaran -->
-                            <div class="modal fade" id="modal-payment-{{ $d->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <form method="POST" action="{{ route('mbg.billing.payment', $d->id) }}">
-                                            @csrf
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Update Pembayaran: {{ $d->dispatch_code }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    <span class="text-muted d-block small">Unit SPPG:</span>
-                                                    <p class="fw-bold mb-1">{{ $d->toWarehouse ? $d->toWarehouse->name : '-' }}</p>
-                                                    <span class="text-muted d-block small">Total Tagihan:</span>
-                                                    <h5 class="text-primary fw-bold">Rp {{ number_format($d->total_price, 0, ',', '.') }}</h5>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold">Status Pembayaran</label>
-                                                    <select name="payment_status" class="form-select" id="pay-status-{{ $d->id }}">
-                                                        <option value="paid" {{ $d->payment_status == 'paid' ? 'selected' : '' }}>Lunas (Full Paid)</option>
-                                                        <option value="partial" {{ $d->payment_status == 'partial' ? 'selected' : '' }}>Sebagian (Cicil / Deposit)</option>
-                                                        <option value="unpaid" {{ $d->payment_status == 'unpaid' ? 'selected' : '' }}>Belum Lunas (Unpaid)</option>
-                                                    </select>
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label">Nominal Pembayaran Diterima (Rp)</label>
-                                                    <input type="number" step="1000" name="paid_amount" class="form-control" value="{{ $d->paid_amount }}" placeholder="Contoh: {{ $d->total_price }}">
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                                                <button type="submit" class="btn btn-primary">Simpan Status Bayar</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Modal Update Cashback -->
-                            <div class="modal fade" id="modal-cashback-{{ $d->id }}" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <div class="modal-content">
-                                        <form method="POST" action="{{ route('mbg.billing.cashback', $d->id) }}">
-                                            @csrf
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Atur Cashback Koperasi: {{ $d->dispatch_code }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <p class="text-muted small">Total Tagihan: <strong>Rp {{ number_format($d->total_price, 0, ',', '.') }}</strong></p>
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold">Persentase Cashback (%)</label>
-                                                    <input type="number" step="0.1" name="cashback_percent" class="form-control" value="{{ $d->cashback_percent }}" placeholder="Contoh: 2.5">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label class="form-label fw-bold">Atau Nominal Langsung (Rp)</label>
-                                                    <input type="number" step="1000" name="cashback_amount" class="form-control" value="{{ $d->cashback_amount }}" placeholder="Contoh: 150000">
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                                                <button type="submit" class="btn btn-warning">Simpan Cashback</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
                         @empty
                             <tr>
                                 <td colspan="11" class="text-center py-4 text-muted">
@@ -277,5 +208,77 @@
             </div>
         </div>
     </div>
+</div>
+
+@foreach($dispatches as $d)
+    <!-- Modal Update Pembayaran -->
+    <div class="modal fade" id="modal-payment-{{ $d->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="{{ route('mbg.billing.payment', $d->id) }}">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title">Update Pembayaran: {{ $d->dispatch_code }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <span class="text-muted d-block small">Unit SPPG:</span>
+                            <p class="fw-bold mb-1">{{ $d->toWarehouse ? $d->toWarehouse->name : '-' }}</p>
+                            <span class="text-muted d-block small">Total Tagihan:</span>
+                            <h5 class="text-primary fw-bold">Rp {{ number_format($d->total_price, 0, ',', '.') }}</h5>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Status Pembayaran</label>
+                            <select name="payment_status" class="form-select" id="pay-status-{{ $d->id }}">
+                                <option value="paid" {{ $d->payment_status == 'paid' ? 'selected' : '' }}>Lunas (Full Paid)</option>
+                                <option value="partial" {{ $d->payment_status == 'partial' ? 'selected' : '' }}>Sebagian (Cicil / Deposit)</option>
+                                <option value="unpaid" {{ $d->payment_status == 'unpaid' ? 'selected' : '' }}>Belum Lunas (Unpaid)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nominal Pembayaran Diterima (Rp)</label>
+                            <input type="number" step="1000" name="paid_amount" class="form-control" value="{{ $d->paid_amount }}" placeholder="Contoh: {{ $d->total_price }}">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-primary">Simpan Status Bayar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Update Cashback -->
+    <div class="modal fade" id="modal-cashback-{{ $d->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST" action="{{ route('mbg.billing.cashback', $d->id) }}">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title">Atur Cashback Koperasi: {{ $d->dispatch_code }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted small">Total Tagihan: <strong>Rp {{ number_format($d->total_price, 0, ',', '.') }}</strong></p>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Persentase Cashback (%)</label>
+                            <input type="number" step="0.1" name="cashback_percent" class="form-control" value="{{ $d->cashback_percent }}" placeholder="Contoh: 2.5">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Atau Nominal Langsung (Rp)</label>
+                            <input type="number" step="1000" name="cashback_amount" class="form-control" value="{{ $d->cashback_amount }}" placeholder="Contoh: 150000">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                        <button type="submit" class="btn btn-warning">Simpan Cashback</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+@endforeach
 </div>
 @endsection

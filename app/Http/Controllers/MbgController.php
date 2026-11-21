@@ -171,6 +171,18 @@ class MbgController extends Controller
                     'workspace' => $workspace,
                     'created_by' => $creator,
                 ]);
+
+                // Potong stok master barang (ProductService) agar sinkron dengan pengiriman dari Gudang Pusat
+                $koperasiWarehouse = Warehouse::where('workspace', $workspace)
+                    ->where(function($q) {
+                        $q->where('name', 'like', '%Pusat%')
+                          ->orWhere('name', 'like', '%Koperasi%');
+                    })->first() ?? Warehouse::where('workspace', $workspace)->first();
+
+                if (!$koperasiWarehouse || $request->from_warehouse_id == $koperasiWarehouse->id) {
+                    $product->quantity = max(0, (float) $product->quantity - $qty);
+                    $product->save();
+                }
             }
 
             if (empty($itemsData)) {
@@ -223,6 +235,12 @@ class MbgController extends Controller
         DB::beginTransaction();
         try {
             // Revert stock transfer
+            $koperasiWarehouse = Warehouse::where('workspace', $dispatch->workspace)
+                ->where(function($q) {
+                    $q->where('name', 'like', '%Pusat%')
+                      ->orWhere('name', 'like', '%Koperasi%');
+                })->first() ?? Warehouse::where('workspace', $dispatch->workspace)->first();
+
             foreach ($dispatch->items as $item) {
                 WarehouseTransfer::warehouse_transfer_qty(
                     $dispatch->to_warehouse_id,
@@ -230,6 +248,15 @@ class MbgController extends Controller
                     $item->product_id,
                     $item->quantity
                 );
+
+                // Kembalikan stok master barang (ProductService) jika berasal dari Gudang Pusat
+                if (!$koperasiWarehouse || $dispatch->from_warehouse_id == $koperasiWarehouse->id) {
+                    $product = ProductService::find($item->product_id);
+                    if ($product) {
+                        $product->quantity = (float) $product->quantity + (float) $item->quantity;
+                        $product->save();
+                    }
+                }
             }
             $dispatch->delete();
             DB::commit();
@@ -412,10 +439,13 @@ class MbgController extends Controller
     public function billing(Request $request)
     {
         $workspace = getActiveWorkSpace();
+        $userWhId = $this->getUserSppgWarehouseId();
         $query = MbgDispatch::where('workspace', $workspace)
             ->with(['fromWarehouse', 'toWarehouse', 'items.product']);
 
-        if ($request->filled('to_warehouse_id')) {
+        if ($userWhId) {
+            $query->where('to_warehouse_id', $userWhId);
+        } elseif ($request->filled('to_warehouse_id')) {
             $query->where('to_warehouse_id', $request->to_warehouse_id);
         }
         if ($request->filled('payment_status')) {
@@ -438,13 +468,17 @@ class MbgController extends Controller
             return $d->unpaid_amount;
         });
 
-        $warehouses = Warehouse::where('workspace', $workspace)
-            ->where('name', 'like', '%SPPG%')
-            ->get();
+        if ($userWhId) {
+            $warehouses = Warehouse::where('id', $userWhId)->get();
+        } else {
+            $warehouses = Warehouse::where('workspace', $workspace)
+                ->where('name', 'like', '%SPPG%')
+                ->get();
+        }
 
         return view('mbg.billing.index', compact(
             'dispatches', 'warehouses', 'totalBilling', 'totalCost',
-            'grossProfit', 'totalCashback', 'netProfit', 'totalPaid', 'totalUnpaid'
+            'grossProfit', 'totalCashback', 'netProfit', 'totalPaid', 'totalUnpaid', 'userWhId'
         ));
     }
 

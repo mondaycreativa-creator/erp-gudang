@@ -74,9 +74,9 @@ class PaymentController extends Controller
                 $query->where('payments.category_id', '=', $request->category);
 
             }
-            $query = $query->join('vendors', 'payments.vendor_id', '=', 'vendors.id')
-                ->join('bank_accounts', 'payments.account_id', '=', 'bank_accounts.id')
-                ->join('categories', 'payments.category_id', '=', 'categories.id');
+            $query = $query->leftJoin('vendors', 'payments.vendor_id', '=', 'vendors.id')
+                ->leftJoin('bank_accounts', 'payments.account_id', '=', 'bank_accounts.id')
+                ->leftJoin('categories', 'payments.category_id', '=', 'categories.id');
             $payments = $query->get();
 
             return view('account::payment.index', compact('payments', 'account', 'category', 'vendor'));

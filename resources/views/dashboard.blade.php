@@ -10,9 +10,14 @@
 
 @section('page-action')
     <div class="d-flex flex-wrap align-items-center gap-2">
-        <a href="{{ route('purchases.create', 0) }}" class="btn btn-sm btn-primary">
-            <i class="ti ti-shopping-cart-plus me-1"></i> {{ __('+ Barang Masuk (Pusat)') }}
-        </a>
+        @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
+            <a href="{{ route('purchases.create', 0) }}" class="btn btn-sm btn-primary">
+                <i class="ti ti-shopping-cart-plus me-1"></i> {{ __('+ Barang Masuk (Pusat)') }}
+            </a>
+            <a href="{{ route('mbg.billing.index') }}" class="btn btn-sm btn-warning text-dark">
+                <i class="ti ti-report-money me-1"></i> {{ __('Rekap Tagihan & Laba') }}
+            </a>
+        @endif
         <a href="{{ route('mbg.dispatches.create') }}" class="btn btn-sm btn-info text-white">
             <i class="ti ti-truck me-1"></i> {{ __('+ Kirim ke SPPG') }}
         </a>
@@ -310,7 +315,8 @@
 
 @section('content')
 <div class="row">
-    <!-- KPI Summary Cards (Dynamic) -->
+    <!-- KPI Summary Cards (Dynamic) - Keuangan: Disembunyikan untuk Admin Dapur & Aslap -->
+    @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
     <div class="col-xl-3 col-md-6 col-12 mb-3">
         <div class="card bg-primary text-white mb-0 h-100">
             <div class="card-body">
@@ -351,6 +357,7 @@
             </div>
         </div>
     @endforeach
+    @endif
 
     <!-- Main Stock Matrix Table (Fully Dynamic Multi-Warehouse) -->
     <div class="col-12 mb-4">
@@ -484,7 +491,11 @@
                                 <th style="width: 28%;">{{ __('No. Surat Jalan') }}</th>
                                 <th style="width: 30%;">{{ __('Tujuan SPPG') }}</th>
                                 <th class="text-center" style="width: 20%;">{{ __('Tanggal') }}</th>
-                                <th class="text-end" style="width: 22%;">{{ __('Nilai Transfer') }}</th>
+                                @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
+                                    <th class="text-end" style="width: 22%;">{{ __('Nilai Transfer') }}</th>
+                                @else
+                                    <th class="text-end" style="width: 22%;">{{ __('Status') }}</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody>
@@ -504,9 +515,15 @@
                                     <td class="text-center text-muted small text-nowrap">
                                         <i class="ti ti-calendar me-1 opacity-75"></i>{{ \Carbon\Carbon::parse($disp->delivery_date)->format('d M Y') }}
                                     </td>
-                                    <td class="text-end fw-bold text-dark text-nowrap">
-                                        Rp {{ number_format($disp->total_cost, 0, ',', '.') }}
-                                    </td>
+                                    @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
+                                        <td class="text-end fw-bold text-dark text-nowrap">
+                                            Rp {{ number_format($disp->total_cost, 0, ',', '.') }}
+                                        </td>
+                                    @else
+                                        <td class="text-end text-nowrap">
+                                            <span class="badge bg-light-success text-success">{{ ucfirst($disp->status ?? 'Terkirim') }}</span>
+                                        </td>
+                                    @endif
                                 </tr>
                             @empty
                                 <tr>
@@ -528,9 +545,15 @@
                                 <span class="fw-bold text-primary code-pill">
                                     <i class="ti ti-file-text me-1"></i>{{ $disp->dispatch_code }}
                                 </span>
-                                <span class="fw-bold text-dark fs-6">
-                                    Rp {{ number_format($disp->total_cost, 0, ',', '.') }}
-                                </span>
+                                @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
+                                    <span class="fw-bold text-dark fs-6">
+                                        Rp {{ number_format($disp->total_cost, 0, ',', '.') }}
+                                    </span>
+                                @else
+                                    <span class="badge bg-light-success text-success">
+                                        {{ ucfirst($disp->status ?? 'Terkirim') }}
+                                    </span>
+                                @endif
                             </div>
                             <div class="d-flex justify-content-between align-items-center text-muted small">
                                 <span class="d-inline-flex align-items-center text-truncate pe-2">

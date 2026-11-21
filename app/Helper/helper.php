@@ -515,7 +515,43 @@ if (!function_exists('isAdminDapur')) {
             return false;
         }
         $type = strtolower($user->type ?? '');
-        return str_contains($type, 'sppg') || str_contains($type, 'dapur') || str_contains($type, 'asisten lapangan');
+        if (str_contains($type, 'sppg') || str_contains($type, 'dapur') || str_contains($type, 'asisten lapangan') || str_contains($type, 'aslap')) {
+            return true;
+        }
+        if (method_exists($user, 'roles')) {
+            foreach ($user->roles as $role) {
+                $rName = strtolower($role->name ?? '');
+                if (str_contains($rName, 'sppg') || str_contains($rName, 'dapur') || str_contains($rName, 'asisten lapangan') || str_contains($rName, 'aslap')) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
+
+if (!function_exists('isAslap')) {
+    function isAslap($user = null)
+    {
+        if (!$user) {
+            $user = \Auth::user();
+        }
+        if (!$user) {
+            return false;
+        }
+        $type = strtolower($user->type ?? '');
+        if (str_contains($type, 'aslap') || str_contains($type, 'asisten lapangan')) {
+            return true;
+        }
+        if (method_exists($user, 'roles')) {
+            foreach ($user->roles as $role) {
+                $rName = strtolower($role->name ?? '');
+                if (str_contains($rName, 'aslap') || str_contains($rName, 'asisten lapangan')) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
 
@@ -528,8 +564,8 @@ if (!function_exists('canManagePrices')) {
         if (!$user) {
             return false;
         }
-        // Admin Dapur / SPPG / Asisten Lapangan cannot manage/view prices
-        if (isAdminDapur($user)) {
+        // Admin Dapur / SPPG / Aslap cannot manage/view prices or financial data
+        if (isAdminDapur($user) || (function_exists('isAslap') && isAslap($user))) {
             return false;
         }
         $type = strtolower($user->type ?? '');
@@ -537,7 +573,14 @@ if (!function_exists('canManagePrices')) {
         if (in_array($user->type, ['super admin', 'company', 'Admin Koperasi']) || str_contains($type, 'koperasi') || str_contains($type, 'super admin') || str_contains($type, 'company')) {
             return true;
         }
-        return true;
+        return false;
+    }
+}
+
+if (!function_exists('canViewFinancialCards')) {
+    function canViewFinancialCards($user = null)
+    {
+        return function_exists('canManagePrices') ? canManagePrices($user) : false;
     }
 }
 

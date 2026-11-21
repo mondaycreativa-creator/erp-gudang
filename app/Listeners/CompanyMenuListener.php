@@ -89,6 +89,21 @@ class CompanyMenuListener
             'permission' => ''
         ]);
 
+        // 5b. Rekap Tagihan Dapur & Laba Koperasi (Billing & Margin)
+        $menu->add([
+            'category' => 'Operations',
+            'title' => __('Tagihan & Laba SPPG'),
+            'icon' => 'report-money',
+            'name' => 'mbg-billing',
+            'parent' => null,
+            'order' => 45,
+            'ignore_if' => [],
+            'depend_on' => [],
+            'route' => 'mbg.billing.index',
+            'module' => $module,
+            'permission' => ''
+        ]);
+
         // 6. Data Gudang (Pusat, SPPG Kerep, SPPG Kemiri)
         $menu->add([
             'category' => 'Operations',

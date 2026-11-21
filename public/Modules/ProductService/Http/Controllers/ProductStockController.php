@@ -6,6 +6,9 @@ use Illuminate\Contracts\Support\Renderable;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\ProductService\Entities\ProductService;
+use App\Models\Purchase;
+use App\Models\Warehouse;
+use App\Models\WarehouseProduct;
 
 class ProductStockController extends Controller
 {
@@ -28,6 +31,34 @@ class ProductStockController extends Controller
                 ->orWhere('created_by', 1);
             })->where('type', '=', 'product')->get();
 
+            // Sinkronisasi dengan stok fisik Gudang Pusat
+            $workspace = getActiveWorkSpace();
+            $pusatWarehouse = Warehouse::where('workspace', $workspace)
+                ->where(function($q) {
+                    $q->where('name', 'like', '%Pusat%')
+                      ->orWhere('name', 'like', '%Koperasi%');
+                })->first() ?? Warehouse::where('workspace', $workspace)->first();
+
+            if ($pusatWarehouse) {
+                $pusatStocks = WarehouseProduct::where('warehouse_id', $pusatWarehouse->id)
+                    ->pluck('quantity', 'product_id')
+                    ->toArray();
+
+                $warehouseProductIds = WarehouseProduct::where('workspace', $workspace)
+                    ->distinct()
+                    ->pluck('product_id')
+                    ->toArray();
+
+                foreach ($productServices as $ps) {
+                    if (in_array($ps->id, $warehouseProductIds)) {
+                        $actualQty = isset($pusatStocks[$ps->id]) ? (float) $pusatStocks[$ps->id] : 0;
+                        if ((float) $ps->quantity != $actualQty) {
+                            $ps->quantity = $actualQty;
+                            ProductService::where('id', $ps->id)->update(['quantity' => $actualQty]);
+                        }
+                    }
+                }
+            }
 
             return view('productservice::productstock.index', compact('productServices'));
         }
@@ -110,6 +141,16 @@ class ProductStockController extends Controller
                 $productService->quantity   = $total;
                 $productService->created_by = creatorId();
                 $productService->save();
+
+                // Sinkronkan ke stok fisik Gudang Pusat
+                $pusat = Warehouse::where('workspace', getActiveWorkSpace())
+                    ->where(function($q) {
+                        $q->where('name', 'like', '%Pusat%')
+                          ->orWhere('name', 'like', '%Koperasi%');
+                    })->first() ?? Warehouse::where('workspace', getActiveWorkSpace())->first();
+                if ($pusat) {
+                    Purchase::addWarehouseStock($productService->id, $request->quantity, $pusat->id);
+                }
 
                 //Product Stock Report
                 $type        = 'manually';

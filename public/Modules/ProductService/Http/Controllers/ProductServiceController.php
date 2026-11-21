@@ -67,6 +67,35 @@ class ProductServiceController extends Controller
             }
                 $productServices = $productServices->with(['categorys','units'])->get();
 
+            // Sinkronisasi otomatis stok master barang dengan stok fisik Gudang Pusat (MBG / Multi-Warehouse)
+            $workspace = getActiveWorkSpace();
+            $pusatWarehouse = Warehouse::where('workspace', $workspace)
+                ->where(function($q) {
+                    $q->where('name', 'like', '%Pusat%')
+                      ->orWhere('name', 'like', '%Koperasi%');
+                })->first() ?? Warehouse::where('workspace', $workspace)->first();
+
+            if ($pusatWarehouse) {
+                $pusatStocks = WarehouseProduct::where('warehouse_id', $pusatWarehouse->id)
+                    ->pluck('quantity', 'product_id')
+                    ->toArray();
+
+                $warehouseProductIds = WarehouseProduct::where('workspace', $workspace)
+                    ->distinct()
+                    ->pluck('product_id')
+                    ->toArray();
+
+                foreach ($productServices as $ps) {
+                    if (in_array($ps->id, $warehouseProductIds)) {
+                        $actualQty = isset($pusatStocks[$ps->id]) ? (float) $pusatStocks[$ps->id] : 0;
+                        if ((float) $ps->quantity != $actualQty) {
+                            $ps->quantity = $actualQty;
+                            ProductService::where('id', $ps->id)->update(['quantity' => $actualQty]);
+                        }
+                    }
+                }
+            }
+
             return view('productservice::index',compact('productServices', 'category','product_type'));
         }
         else
