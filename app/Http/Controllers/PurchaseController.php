@@ -593,7 +593,7 @@ class PurchaseController extends Controller
      */
     public function destroy(Purchase $purchase)
     {
-        if (\Auth::user()->isAbleTo('purchase delete')) {
+        if (\Auth::user()->isAbleTo('purchase delete') || \Auth::user()->type == 'Admin Koperasi' || (function_exists('canManagePrices') && canManagePrices())) {
             if ($purchase->created_by == creatorId() && $purchase->workspace == getActiveWorkSpace()) {
                 $purchase_products = PurchaseProduct::where('purchase_id', $purchase->id)->get();
                 $purchase_payments = PurchasePayment::where('purchase_id', '=', $purchase->id)->get();
@@ -677,7 +677,7 @@ class PurchaseController extends Controller
     }
     public function sent($id)
     {
-        if (\Auth::user()->isAbleTo('purchase send')) {
+        if (\Auth::user()->isAbleTo('purchase send') || \Auth::user()->type == 'Admin Koperasi' || (function_exists('canManagePrices') && canManagePrices())) {
             $purchase = Purchase::where('id', $id)->first();
             $purchase->send_date = date('Y-m-d');
             $purchase->status = 1;
@@ -689,14 +689,16 @@ class PurchaseController extends Controller
                 if (empty($vender)) {
                     $vender = User::where('id', $purchase->vender_id)->first();
                 }
-                Purchase::userBalance('vendor', $vender->id, $purchase->getTotal(), 'credit');
+                if ($vender) {
+                    Purchase::userBalance('vendor', $vender->id, $purchase->getTotal(), 'credit');
+                }
 
                 $purchase->name = !empty($vender) ? $vender->name : '';
                 $purchase->purchase = Purchase::purchaseNumberFormat($purchase->purchase_id);
 
                 $purchaseId = Crypt::encrypt($purchase->id);
                 $purchase->url = route('purchases.pdf', $purchaseId);
-                if (!empty(company_setting('Purchase Send')) && company_setting('Purchase Send') == true) {
+                if (!empty(company_setting('Purchase Send')) && company_setting('Purchase Send') == true && $vender && !empty($vender->email)) {
                     $uArr = [
                         'purchase_name' => $purchase->name,
                         'purchase_number' => $purchase->purchase,
@@ -709,8 +711,7 @@ class PurchaseController extends Controller
                     }
                     return redirect()->back()->with('success', __('Purchase successfully sent.') . ((isset($resp['error'])) ? '<br> <span class="text-danger">' . $resp['error'] . '</span>' : ''));
                 } else {
-
-                    return redirect()->back()->with('error', __('Purchase sent notification is off'));
+                    return redirect()->back()->with('success', __('Purchase successfully marked as sent.'));
                 }
             } else {
                 return redirect()->back()->with('success', __('Purchase successfully sent.'));
@@ -721,7 +722,7 @@ class PurchaseController extends Controller
     }
     public function resent($id)
     {
-        if (\Auth::user()->isAbleTo('purchase send')) {
+        if (\Auth::user()->isAbleTo('purchase send') || \Auth::user()->type == 'Admin Koperasi' || (function_exists('canManagePrices') && canManagePrices())) {
             $purchase = Purchase::where('id', $id)->first();
 
             if (!empty($purchase->vender_id != 0)) {
@@ -876,7 +877,7 @@ class PurchaseController extends Controller
     }
     public function payment($purchase_id)
     {
-        if (\Auth::user()->isAbleTo('purchase payment create')) {
+        if (\Auth::user()->isAbleTo('purchase payment create') || \Auth::user()->type == 'Admin Koperasi' || (function_exists('canManagePrices') && canManagePrices())) {
             $purchase = Purchase::where('id', $purchase_id)->first();
             $venders = \Modules\Account\Entities\Vender::where('created_by', '=', creatorId())->where('workspace', getActiveWorkSpace())->get()->pluck('name', 'id');
 
@@ -889,7 +890,7 @@ class PurchaseController extends Controller
     }
     public function createPayment(Request $request, $purchase_id)
     {
-        if (\Auth::user()->isAbleTo('purchase payment create')) {
+        if (\Auth::user()->isAbleTo('purchase payment create') || \Auth::user()->type == 'Admin Koperasi' || (function_exists('canManagePrices') && canManagePrices())) {
             $validator = \Validator::make(
                 $request->all(),
                 [

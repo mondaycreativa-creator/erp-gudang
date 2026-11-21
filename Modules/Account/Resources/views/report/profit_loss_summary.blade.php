@@ -126,204 +126,168 @@
                     <div class="card-body table-border-style">
                         <div class="row">
                             <div class="col-sm-12">
-                                <h5 class="pb-3">{{ __('Income') }}</h5>
-                                <div class="table-responsive mt-3 mb-3">
-                                    <table class="table">
+                                <div class="table-responsive">
+                                    <h5 class="pb-3">{{ __('Income') }}</h5>
+                                    <table class="table text-nowrap mb-0">
                                         <thead>
                                             <tr>
-                                                <th width="25%">{{ __('Category') }}</th>
+                                                <th style="min-width: 180px;">{{ __('Category') }}</th>
                                                 @foreach ($month as $m)
-                                                    <th width="15%">{{ $m }}</th>
+                                                    <th style="min-width: 110px;">{{ $m }}</th>
                                                 @endforeach
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr>
-                                                <td colspan="13" class="text-dark"><span>{{ __('Revenue : ') }}</span>
+                                                <td colspan="{{ count($month) + 1 }}" class="text-dark"><span>{{ __('Revenue : ') }}</span>
                                                 </td>
                                             </tr>
                                             @if (!empty($revenueIncomeArray))
                                                 @foreach ($revenueIncomeArray as $i => $revenue)
                                                     <tr>
-                                                        <td>{{ !empty($revenue['category']) ? $revenue['category'] : '' }}
+                                                        <td style="min-width: 180px;">{{ !empty($revenue['category']) ? $revenue['category'] : '' }}
                                                         </td>
                                                         @foreach ($revenue['amount'] as $j => $amount)
-                                                            <td width="15%">{{ currency_format_with_sym($amount) }}</td>
+                                                            <td style="min-width: 110px;">{{ currency_format_with_sym($amount) }}</td>
                                                         @endforeach
                                                     </tr>
                                                 @endforeach
                                             @endif
 
                                             <tr>
-                                                <td colspan="13" class="text-dark"><span>{{ __('Invoice : ') }}</span>
+                                                <td colspan="{{ count($month) + 1 }}" class="text-dark"><span>{{ __('Invoice : ') }}</span>
                                                 </td>
                                             </tr>
                                             @if (!empty($invoiceIncomeArray))
                                                 @foreach ($invoiceIncomeArray as $i => $invoice)
                                                     <tr>
-                                                        <td>{{ !empty($invoice['category']) ? $invoice['category'] : '' }}
+                                                        <td style="min-width: 180px;">{{ !empty($invoice['category']) ? $invoice['category'] : '' }}
                                                         </td>
                                                         @foreach ($invoice['amount'] as $j => $amount)
-                                                            <td width="15%">{{ currency_format_with_sym($amount) }}</td>
+                                                            <td style="min-width: 110px;">{{ currency_format_with_sym($amount) }}</td>
                                                         @endforeach
                                                     </tr>
                                                 @endforeach
                                             @endif
-                                            <div class="row">
-                                                <div class="col-sm-12">
-                                                    <table class="table table-flush border">
-                                                        <tbody>
-                                                            <tr>
-                                                                <td colspan="13" class="text-dark">
-                                                                    <span>{{ __('Total Income =  Revenue + Invoice ') }}</span>
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td width="25%" class="text-dark">
-                                                                    {{ __('Total Income') }}</td>
-                                                                @foreach ($totalIncome as $income)
-                                                                    <td width="15%">
-                                                                        {{ currency_format_with_sym($income) }}</td>
-                                                                @endforeach
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
                                         </tbody>
                                     </table>
-                                </div>
 
+                                    <table class="table table-flush border text-nowrap mb-4">
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="{{ count($month) + 1 }}" class="text-dark">
+                                                    <span>{{ __('Total Income =  Revenue + Invoice ') }}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="min-width: 180px;" class="text-dark">
+                                                    {{ __('Total Income') }}</td>
+                                                @foreach ($totalIncome as $income)
+                                                    <td style="min-width: 110px;">
+                                                        {{ currency_format_with_sym($income) }}</td>
+                                                @endforeach
+                                            </tr>
+                                        </tbody>
+                                    </table>
 
-                                <div class="col-sm-12">
-                                    <h5>{{ __('Expense') }}</h5>
-                                    <div class="table-responsive mt-4">
-                                        <table class="table  mb-0" id="dataTable-manual">
-                                            <thead>
-                                                <tr>
-                                                    <th width="25%">{{ __('Category') }}</th>
-                                                    @foreach ($month as $m)
-                                                        <th width="15%">{{ $m }}</th>
-                                                    @endforeach
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td colspan="13" class="text-dark">
-                                                        <span>{{ __('Payment : ') }}</span></td>
-                                                </tr>
-                                                @if (!empty($expenseArray))
-                                                    @foreach ($expenseArray as $i => $expense)
-                                                        <tr>
-                                                            <td>{{ !empty($expense['category']) ? $expense['category'] : '' }}
-                                                            </td>
-                                                            @foreach ($expense['amount'] as $j => $amount)
-                                                                <td width="15%">{{ currency_format_with_sym($amount) }}
-                                                                </td>
-                                                            @endforeach
-                                                        </tr>
-                                                    @endforeach
-                                                @endif
-                                                <tr>
-                                                    <td colspan="13" class="text-dark"><span>{{ __('Bill : ') }}</span>
-                                                    </td>
-                                                </tr>
-                                                @if (!empty($billExpenseArray))
-                                                    @foreach ($billExpenseArray as $i => $bill)
-                                                        <tr>
-                                                            <td>{{ !empty($bill['category']) ? $bill['category'] : '' }}
-                                                            </td>
-                                                            @foreach ($bill['amount'] as $j => $amount)
-                                                                <td width="15%">{{ currency_format_with_sym($amount) }}
-                                                                </td>
-                                                            @endforeach
-                                                        </tr>
-                                                    @endforeach
-                                                @endif
-                                                @if (!empty($salExpenseArray) && module_is_active('Hrm'))
-                                                    @foreach ($salExpenseArray as $i => $salexpensearray)
-                                                        <tr>
-                                                            <td>{{ __('Employee Salary :') }}</td>
-                                                            @foreach ($salexpensearray['amount'] as $j => $amount)
-                                                                <td width="15%">
-                                                                    {{ currency_format_with_sym($amount) }}
-                                                                </td>
-                                                            @endforeach
-                                                        </tr>
-                                                    @endforeach
-
-                                                    <div class="row">
-                                                        <div class="col-sm-12">
-                                                            <table class="table table-flush border" id="dataTable-manual">
-                                                                <tbody>
-                                                                    <tr>
-                                                                        <td colspan="13" class="text-dark">
-                                                                            <span>{{ __('Total Expense =  Payment + Bill + Employee Salary') }}</span>
-                                                                        </td>
-                                                                    </tr>
-                                                                    <tr>
-                                                                        <td class="text-dark">{{ __('Total Expenses') }}
-                                                                        </td>
-                                                                        @foreach ($totalExpense as $expense)
-                                                                            <td width="15%">
-                                                                                {{ currency_format_with_sym($expense) }}
-                                                                            </td>
-                                                                        @endforeach
-                                                                    </tr>
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </div>
-                                                @else
-                                                    <div class="row">
-                                                        <div class="col-sm-12">
-                                                            <table class="table table-flush border" id="dataTable-manual">
-                                                                <tbody>
-                                                                    <tr>
-                                                                        <td colspan="13" class="text-dark">
-                                                                            <span>{{ __('Total Expense =  Payment + Bill') }}</span>
-                                                                        </td>
-                                                                    </tr>
-                                                                    <tr>
-                                                                        <td class="text-dark">{{ __('Total Expenses') }}
-                                                                        </td>
-                                                                        @foreach ($totalExpense as $expense)
-                                                                            <td width="15%">
-                                                                                {{ currency_format_with_sym($expense) }}
-                                                                            </td>
-                                                                        @endforeach
-                                                                    </tr>
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </div>
-                                                @endif
-
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-sm-12">
-                                            <table class="table table-flush border" id="dataTable-manual">
-                                                <tbody>
+                                    <h5 class="pb-3 mt-4">{{ __('Expense') }}</h5>
+                                    <table class="table text-nowrap mb-0" id="dataTable-manual">
+                                        <thead>
+                                            <tr>
+                                                <th style="min-width: 180px;">{{ __('Category') }}</th>
+                                                @foreach ($month as $m)
+                                                    <th style="min-width: 110px;">{{ $m }}</th>
+                                                @endforeach
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="{{ count($month) + 1 }}" class="text-dark">
+                                                    <span>{{ __('Payment : ') }}</span></td>
+                                            </tr>
+                                            @if (!empty($expenseArray))
+                                                @foreach ($expenseArray as $i => $expense)
                                                     <tr>
-                                                        <td colspan="13" class="text-dark">
-                                                            <span>{{ __('Net Profit = Total Income - Total Expense ') }}</span>
+                                                        <td style="min-width: 180px;">{{ !empty($expense['category']) ? $expense['category'] : '' }}
                                                         </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td width="25%" class="text-dark">{{ __('Net Profit') }}</td>
-                                                        @foreach ($netProfitArray as $i => $profit)
-                                                            <td width="15%"> {{ currency_format_with_sym($profit) }}
+                                                        @foreach ($expense['amount'] as $j => $amount)
+                                                            <td style="min-width: 110px;">{{ currency_format_with_sym($amount) }}
                                                             </td>
                                                         @endforeach
                                                     </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
+                                                @endforeach
+                                            @endif
+                                            <tr>
+                                                <td colspan="{{ count($month) + 1 }}" class="text-dark"><span>{{ __('Bill : ') }}</span>
+                                                </td>
+                                            </tr>
+                                            @if (!empty($billExpenseArray))
+                                                @foreach ($billExpenseArray as $i => $bill)
+                                                    <tr>
+                                                        <td style="min-width: 180px;">{{ !empty($bill['category']) ? $bill['category'] : '' }}
+                                                        </td>
+                                                        @foreach ($bill['amount'] as $j => $amount)
+                                                            <td style="min-width: 110px;">{{ currency_format_with_sym($amount) }}
+                                                            </td>
+                                                        @endforeach
+                                                    </tr>
+                                                @endforeach
+                                            @endif
+                                            @if (!empty($salExpenseArray) && module_is_active('Hrm'))
+                                                @foreach ($salExpenseArray as $i => $salexpensearray)
+                                                    <tr>
+                                                        <td style="min-width: 180px;">{{ __('Employee Salary :') }}</td>
+                                                        @foreach ($salexpensearray['amount'] as $j => $amount)
+                                                            <td style="min-width: 110px;">
+                                                                {{ currency_format_with_sym($amount) }}
+                                                            </td>
+                                                        @endforeach
+                                                    </tr>
+                                                @endforeach
+                                            @endif
+                                        </tbody>
+                                    </table>
 
+                                    <table class="table table-flush border text-nowrap mb-4" id="dataTable-manual">
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="{{ count($month) + 1 }}" class="text-dark">
+                                                    @if (module_is_active('Hrm'))
+                                                        <span>{{ __('Total Expense =  Payment + Bill + Employee Salary') }}</span>
+                                                    @else
+                                                        <span>{{ __('Total Expense =  Payment + Bill') }}</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="min-width: 180px;" class="text-dark">{{ __('Total Expenses') }}
+                                                </td>
+                                                @foreach ($totalExpense as $expense)
+                                                    <td style="min-width: 110px;">
+                                                        {{ currency_format_with_sym($expense) }}
+                                                    </td>
+                                                @endforeach
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                    <table class="table table-flush border text-nowrap mt-4" id="dataTable-manual">
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="{{ count($month) + 1 }}" class="text-dark">
+                                                    <span>{{ __('Net Profit = Total Income - Total Expense ') }}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="min-width: 180px;" class="text-dark">{{ __('Net Profit') }}</td>
+                                                @foreach ($netProfitArray as $i => $profit)
+                                                    <td style="min-width: 110px;"> {{ currency_format_with_sym($profit) }}
+                                                    </td>
+                                                @endforeach
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>

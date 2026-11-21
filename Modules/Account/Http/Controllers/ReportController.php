@@ -1071,14 +1071,11 @@ class ReportController extends Controller
 
             if(Auth::user()->isAbleTo('report loss & profit  manage'))
             {
-                $data['month']     = [
-                    'Jan-Mar',
-                    'Apr-Jun',
-                    'Jul-Sep',
-                    'Oct-Dec',
-                    'Total',
-                ];
-                $data['monthList'] = $month = $this->yearMonth();
+                $monthList = $this->yearMonth();
+                $month = $monthList;
+                $month[] = __('Total');
+                $data['month']     = $month;
+                $data['monthList'] = $monthList;
                 $data['yearList']  = $this->yearList();
                 if(isset($request->year))
                 {
@@ -1102,7 +1099,7 @@ class ReportController extends Controller
                     $tmpIncomeArray[$income->category_id][$income->month] = $income->amount;
                 }
 
-                $incomeCatAmount_1  = $incomeCatAmount_2 = $incomeCatAmount_3 = $incomeCatAmount_4 = 0;
+                $incomeCatMonthly   = array_fill(1, 12, 0);
                 $revenueIncomeArray = array();
                 foreach($tmpIncomeArray as $cat_id => $record)
                 {
@@ -1113,57 +1110,25 @@ class ReportController extends Controller
                     {
                         $tmp['category'] = !empty( \Modules\ProductService\Entities\Category::where('id', '=', $cat_id)->first()) ? \Modules\ProductService\Entities\Category::where('id', '=', $cat_id)->first()->name : '';
                     }
-                    $sumData         = [];
+
+                    $incomeData = [];
                     for($i = 1; $i <= 12; $i++)
                     {
-                        $sumData[] = array_key_exists($i, $record) ? $record[$i] : 0;
+                        $val = array_key_exists($i, $record) ? $record[$i] : 0;
+                        $incomeData[$monthList[$i - 1]] = $val;
+                        $incomeCatMonthly[$i] += $val;
                     }
+                    $incomeData[__('Total')] = array_sum($incomeData);
 
-                    $month_1 = array_slice($sumData, 0, 3);
-                    $month_2 = array_slice($sumData, 3, 3);
-                    $month_3 = array_slice($sumData, 6, 3);
-                    $month_4 = array_slice($sumData, 9, 3);
-
-
-                    $incomeData[__('Jan-Mar')] = $sum_1 = array_sum($month_1);
-                    $incomeData[__('Apr-Jun')] = $sum_2 = array_sum($month_2);
-                    $incomeData[__('Jul-Sep')] = $sum_3 = array_sum($month_3);
-                    $incomeData[__('Oct-Dec')] = $sum_4 = array_sum($month_4);
-                    $incomeData[__('Total')]   = array_sum(
-                        array(
-                            $sum_1,
-                            $sum_2,
-                            $sum_3,
-                            $sum_4,
-                        )
-                    );
-
-                    $incomeCatAmount_1 += $sum_1;
-                    $incomeCatAmount_2 += $sum_2;
-                    $incomeCatAmount_3 += $sum_3;
-                    $incomeCatAmount_4 += $sum_4;
-
-                    $data['month'] = array_keys($incomeData);
                     $tmp['amount'] = array_values($incomeData);
 
                     $revenueIncomeArray[] = $tmp;
 
                 }
 
-                $data['incomeCatAmount'] = $incomeCatAmount = [
-                    $incomeCatAmount_1,
-                    $incomeCatAmount_2,
-                    $incomeCatAmount_3,
-                    $incomeCatAmount_4,
-                    array_sum(
-                        array(
-                            $incomeCatAmount_1,
-                            $incomeCatAmount_2,
-                            $incomeCatAmount_3,
-                            $incomeCatAmount_4,
-                        )
-                    ),
-                ];
+                $incomeCatAmount = array_values($incomeCatMonthly);
+                $incomeCatAmount[] = array_sum($incomeCatAmount);
+                $data['incomeCatAmount'] = $incomeCatAmount;
 
                 $data['revenueIncomeArray'] = $revenueIncomeArray;
 
@@ -1183,7 +1148,7 @@ class ReportController extends Controller
                     $invoiceTmpArray[$invoice->category_id][$invoice->month][] = $invoice->getTotal();
                 }
 
-                $invoiceCatAmount_1 = $invoiceCatAmount_2 = $invoiceCatAmount_3 = $invoiceCatAmount_4 = 0;
+                $invoiceCatMonthly  = array_fill(1, 12, 0);
                 $invoiceIncomeArray = array();
                 foreach($invoiceTmpArray as $cat_id => $record)
                 {
@@ -1194,33 +1159,15 @@ class ReportController extends Controller
                     {
                         $invoiceTmp['category'] = !empty(\Modules\ProductService\Entities\Category::where('id', '=', $cat_id)->first()) ? \Modules\ProductService\Entities\Category::where('id', '=', $cat_id)->first()->name : '';
                     }
-                    $invoiceSumData         = [];
+
+                    $invoiceIncomeData = [];
                     for($i = 1; $i <= 12; $i++)
                     {
-                        $invoiceSumData[] = array_key_exists($i, $record) ? array_sum($record[$i]) : 0;
-
+                        $val = array_key_exists($i, $record) ? array_sum($record[$i]) : 0;
+                        $invoiceIncomeData[$monthList[$i - 1]] = $val;
+                        $invoiceCatMonthly[$i] += $val;
                     }
-
-                    $month_1                          = array_slice($invoiceSumData, 0, 3);
-                    $month_2                          = array_slice($invoiceSumData, 3, 3);
-                    $month_3                          = array_slice($invoiceSumData, 6, 3);
-                    $month_4                          = array_slice($invoiceSumData, 9, 3);
-                    $invoiceIncomeData[__('Jan-Mar')] = $sum_1 = array_sum($month_1);
-                    $invoiceIncomeData[__('Apr-Jun')] = $sum_2 = array_sum($month_2);
-                    $invoiceIncomeData[__('Jul-Sep')] = $sum_3 = array_sum($month_3);
-                    $invoiceIncomeData[__('Oct-Dec')] = $sum_4 = array_sum($month_4);
-                    $invoiceIncomeData[__('Total')]   = array_sum(
-                        array(
-                            $sum_1,
-                            $sum_2,
-                            $sum_3,
-                            $sum_4,
-                        )
-                    );
-                    $invoiceCatAmount_1               += $sum_1;
-                    $invoiceCatAmount_2               += $sum_2;
-                    $invoiceCatAmount_3               += $sum_3;
-                    $invoiceCatAmount_4               += $sum_4;
+                    $invoiceIncomeData[__('Total')] = array_sum($invoiceIncomeData);
 
                     $invoiceTmp['amount'] = array_values($invoiceIncomeData);
 
@@ -1228,21 +1175,9 @@ class ReportController extends Controller
 
                 }
 
-                $data['invoiceIncomeCatAmount'] = $invoiceIncomeCatAmount = [
-                    $invoiceCatAmount_1,
-                    $invoiceCatAmount_2,
-                    $invoiceCatAmount_3,
-                    $invoiceCatAmount_4,
-                    array_sum(
-                        array(
-                            $invoiceCatAmount_1,
-                            $invoiceCatAmount_2,
-                            $invoiceCatAmount_3,
-                            $invoiceCatAmount_4,
-                        )
-                    ),
-                ];
-
+                $invoiceCatAmount = array_values($invoiceCatMonthly);
+                $invoiceCatAmount[] = array_sum($invoiceCatAmount);
+                $data['invoiceIncomeCatAmount'] = $invoiceCatAmount;
 
                 $data['invoiceIncomeArray'] = $invoiceIncomeArray;
 
@@ -1266,8 +1201,8 @@ class ReportController extends Controller
                     $tmpExpenseArray[$expense->category_id][$expense->month] = $expense->amount;
                 }
 
-                $expenseArray       = [];
-                $expenseCatAmount_1 = $expenseCatAmount_2 = $expenseCatAmount_3 = $expenseCatAmount_4 = 0;
+                $expenseArray      = [];
+                $expenseCatMonthly = array_fill(1, 12, 0);
                 foreach($tmpExpenseArray as $cat_id => $record)
                 {
                     $tmp             = [];
@@ -1276,57 +1211,25 @@ class ReportController extends Controller
                     {
                         $tmp['category'] = !empty(\Modules\ProductService\Entities\Category::where('id', '=', $cat_id)->first()) ? \Modules\ProductService\Entities\Category::where('id', '=', $cat_id)->first()->name : '';
                     }
-                    $expenseSumData  = [];
+
+                    $expenseData = [];
                     for($i = 1; $i <= 12; $i++)
                     {
-                        $expenseSumData[] = array_key_exists($i, $record) ? $record[$i] : 0;
-
+                        $val = array_key_exists($i, $record) ? $record[$i] : 0;
+                        $expenseData[$monthList[$i - 1]] = $val;
+                        $expenseCatMonthly[$i] += $val;
                     }
+                    $expenseData[__('Total')] = array_sum($expenseData);
 
-                    $month_1 = array_slice($expenseSumData, 0, 3);
-                    $month_2 = array_slice($expenseSumData, 3, 3);
-                    $month_3 = array_slice($expenseSumData, 6, 3);
-                    $month_4 = array_slice($expenseSumData, 9, 3);
-
-                    $expenseData[__('Jan-Mar')] = $sum_1 = array_sum($month_1);
-                    $expenseData[__('Apr-Jun')] = $sum_2 = array_sum($month_2);
-                    $expenseData[__('Jul-Sep')] = $sum_3 = array_sum($month_3);
-                    $expenseData[__('Oct-Dec')] = $sum_4 = array_sum($month_4);
-                    $expenseData[__('Total')]   = array_sum(
-                        array(
-                            $sum_1,
-                            $sum_2,
-                            $sum_3,
-                            $sum_4,
-                        )
-                    );
-
-                    $expenseCatAmount_1 += $sum_1;
-                    $expenseCatAmount_2 += $sum_2;
-                    $expenseCatAmount_3 += $sum_3;
-                    $expenseCatAmount_4 += $sum_4;
-
-                    $data['month'] = array_keys($expenseData);
                     $tmp['amount'] = array_values($expenseData);
 
                     $expenseArray[] = $tmp;
 
                 }
 
-                $data['expenseCatAmount'] = $expenseCatAmount = [
-                    $expenseCatAmount_1,
-                    $expenseCatAmount_2,
-                    $expenseCatAmount_3,
-                    $expenseCatAmount_4,
-                    array_sum(
-                        array(
-                            $expenseCatAmount_1,
-                            $expenseCatAmount_2,
-                            $expenseCatAmount_3,
-                            $expenseCatAmount_4,
-                        )
-                    ),
-                ];
+                $expenseCatAmount = array_values($expenseCatMonthly);
+                $expenseCatAmount[] = array_sum($expenseCatAmount);
+                $data['expenseCatAmount'] = $expenseCatAmount;
                 $data['expenseArray']     = $expenseArray;
 
                 //    ----------------------------EXPENSE BILL-----------------------------------------------------------------------
@@ -1344,8 +1247,8 @@ class ReportController extends Controller
                     $billTmpArray[$bill->category_id][$bill->month][] = $bill->getTotal();
                 }
 
-                $billExpenseArray       = [];
-                $billExpenseCatAmount_1 = $billExpenseCatAmount_2 = $billExpenseCatAmount_3 = $billExpenseCatAmount_4 = 0;
+                $billExpenseArray      = [];
+                $billExpenseCatMonthly = array_fill(1, 12, 0);
                 foreach($billTmpArray as $cat_id => $record)
                 {
                     $billTmp             = [];
@@ -1354,60 +1257,30 @@ class ReportController extends Controller
                     {
                         $billTmp['category'] = !empty(\Modules\ProductService\Entities\Category::where('id', '=', $cat_id)->first()) ? \Modules\ProductService\Entities\Category::where('id', '=', $cat_id)->first()->name : '';
                     }
-                    $billExpensSumData   = [];
+
+                    $billExpenseData = [];
                     for($i = 1; $i <= 12; $i++)
                     {
-                        $billExpensSumData[] = array_key_exists($i, $record) ? array_sum($record[$i]) : 0;
+                        $val = array_key_exists($i, $record) ? array_sum($record[$i]) : 0;
+                        $billExpenseData[$monthList[$i - 1]] = $val;
+                        $billExpenseCatMonthly[$i] += $val;
                     }
+                    $billExpenseData[__('Total')] = array_sum($billExpenseData);
 
-                    $month_1 = array_slice($billExpensSumData, 0, 3);
-                    $month_2 = array_slice($billExpensSumData, 3, 3);
-                    $month_3 = array_slice($billExpensSumData, 6, 3);
-                    $month_4 = array_slice($billExpensSumData, 9, 3);
-
-                    $billExpenseData[__('Jan-Mar')] = $sum_1 = array_sum($month_1);
-                    $billExpenseData[__('Apr-Jun')] = $sum_2 = array_sum($month_2);
-                    $billExpenseData[__('Jul-Sep')] = $sum_3 = array_sum($month_3);
-                    $billExpenseData[__('Oct-Dec')] = $sum_4 = array_sum($month_4);
-                    $billExpenseData[__('Total')]   = array_sum(
-                        array(
-                            $sum_1,
-                            $sum_2,
-                            $sum_3,
-                            $sum_4,
-                        )
-                    );
-
-                    $billExpenseCatAmount_1 += $sum_1;
-                    $billExpenseCatAmount_2 += $sum_2;
-                    $billExpenseCatAmount_3 += $sum_3;
-                    $billExpenseCatAmount_4 += $sum_4;
-
-                    $data['month']     = array_keys($billExpenseData);
                     $billTmp['amount'] = array_values($billExpenseData);
 
                     $billExpenseArray[] = $billTmp;
 
                 }
 
-                $data['billExpenseCatAmount'] = $billExpenseCatAmount = [
-                    $billExpenseCatAmount_1,
-                    $billExpenseCatAmount_2,
-                    $billExpenseCatAmount_3,
-                    $billExpenseCatAmount_4,
-                    array_sum(
-                        array(
-                            $billExpenseCatAmount_1,
-                            $billExpenseCatAmount_2,
-                            $billExpenseCatAmount_3,
-                            $billExpenseCatAmount_4,
-                        )
-                    ),
-                ];
+                $billExpenseCatAmount = array_values($billExpenseCatMonthly);
+                $billExpenseCatAmount[] = array_sum($billExpenseCatAmount);
+                $data['billExpenseCatAmount'] = $billExpenseCatAmount;
 
                 $data['billExpenseArray'] = $billExpenseArray;
 
-                $salExpenseCatAmount = [];
+                $salExpenseCatAmount = array_fill(0, 13, 0);
+                $salExpenseArray = [];
             if (module_is_active('Hrm')) {
                 // -------------------------------------------------EXPENSE EMPLOYEE SALARY---------------------------------------------------
                 $employees = PaySlip::selectRaw('SUM(net_payble) as total_salary, SUBSTRING(salary_month, 1, 4) as year, SUBSTRING(salary_month, 6, 2) as month')
@@ -1418,60 +1291,28 @@ class ReportController extends Controller
                 $employees       = $employees->get();
 
                 $employeess = [];
-                $salExpenseCatAmount_1 = $salExpenseCatAmount_2 = $salExpenseCatAmount_3 = $salExpenseCatAmount_4 = 0;
                 foreach ($employees as $employee) {
                     $employeess[$employee->month][] = $employee->total_salary;
                 }
-                $salTotal = [];
+
+                $salExpenseData = [];
+                $salCatMonthly = array_fill(1, 12, 0);
                 for ($i = 1; $i <= 12; $i++) {
-                    // Assuming $employee->02 and $employee->03 represent different months
-                    $propertyName = str_pad($i, 2, "0", STR_PAD_LEFT); // Ensure two-digit representation
-                    $salTotal[] = array_key_exists($propertyName, $employeess) ? array_sum($employeess[$propertyName]) : 0;
+                    $propertyName = str_pad($i, 2, "0", STR_PAD_LEFT);
+                    $val = array_key_exists($propertyName, $employeess) ? array_sum($employeess[$propertyName]) : 0;
+                    $salExpenseData[$monthList[$i - 1]] = $val;
+                    $salCatMonthly[$i] = $val;
                 }
+                $salExpenseData[__('Total')] = array_sum($salExpenseData);
 
-                $month_1 = array_slice($salTotal, 0, 3);
-                $month_2 = array_slice($salTotal, 3, 3);
-                $month_3 = array_slice($salTotal, 6, 3);
-                $month_4 = array_slice($salTotal, 9, 3);
-
-                $salExpenseData[__('Jan-Mar')] = $sum_1 = array_sum($month_1);
-                $salExpenseData[__('Apr-Jun')] = $sum_2 = array_sum($month_2);
-                $salExpenseData[__('Jul-Sep')] = $sum_3 = array_sum($month_3);
-                $salExpenseData[__('Oct-Dec')] = $sum_4 = array_sum($month_4);
-                $salExpenseData[__('Total')]   = array_sum(
-                    array(
-                        $sum_1,
-                        $sum_2,
-                        $sum_3,
-                        $sum_4,
-                    )
-                );
-
-                $salExpenseCatAmount_1 += $sum_1;
-                $salExpenseCatAmount_2 += $sum_2;
-                $salExpenseCatAmount_3 += $sum_3;
-                $salExpenseCatAmount_4 += $sum_4;
-
-                $data['month']     = array_keys($salExpenseData);
+                $salTmp = [];
                 $salTmp['amount'] = array_values($salExpenseData);
-
 
                 $salExpenseArray[] = $salTmp;
 
-                $data['salExpenseCatAmount'] = $salExpenseCatAmount = [
-                    $salExpenseCatAmount_1,
-                    $salExpenseCatAmount_2,
-                    $salExpenseCatAmount_3,
-                    $salExpenseCatAmount_4,
-                    array_sum(
-                        array(
-                            $salExpenseCatAmount_1,
-                            $salExpenseCatAmount_2,
-                            $salExpenseCatAmount_3,
-                            $salExpenseCatAmount_4,
-                        )
-                    ),
-                ];
+                $salExpenseCatAmount = array_values($salCatMonthly);
+                $salExpenseCatAmount[] = array_sum($salExpenseCatAmount);
+                $data['salExpenseCatAmount'] = $salExpenseCatAmount;
                 $data['salExpenseArray'] = $salExpenseArray;
             }
 
@@ -1482,6 +1323,7 @@ class ReportController extends Controller
                 );
 
 
+                $netProfit = [];
                 foreach($totalIncome as $k => $income)
                 {
                     $netProfit[] = $income - $totalExpense[$k];

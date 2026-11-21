@@ -108,24 +108,31 @@
 
 
 
-                                    @if(Laratrust::hasPermission('purchase edit') || Laratrust::hasPermission('purchase delete') || Laratrust::hasPermission('purchase show'))
+                                    @if(Laratrust::hasPermission('purchase edit') || Laratrust::hasPermission('purchase delete') || Laratrust::hasPermission('purchase show') || Auth::user()->type == 'Admin Koperasi' || (function_exists('canManagePrices') && canManagePrices()))
                                         <td class="Action">
                                             <span>
-                                                @permission('purchase show')
+                                                @if($purchase->status == 0 && (Laratrust::hasPermission('purchase send') || Auth::user()->type == 'Admin Koperasi' || (function_exists('canManagePrices') && canManagePrices())))
+                                                    <div class="action-btn bg-success ms-2">
+                                                        <a href="{{ route('purchases.sent', $purchase->id) }}" class="mx-3 btn btn-sm align-items-center" data-bs-toggle="tooltip" title="{{ __('Tandai Terkirim / Konfirmasi') }}" data-original-title="{{ __('Tandai Terkirim / Konfirmasi') }}">
+                                                            <i class="ti ti-send text-white"></i>
+                                                        </a>
+                                                    </div>
+                                                @endif
+                                                @if(Laratrust::hasPermission('purchase show') || Auth::user()->type == 'Admin Koperasi' || (function_exists('canManagePrices') && canManagePrices()))
                                                     <div class="action-btn bg-warning ms-2">
                                                         <a href="{{ route('purchases.show',\Crypt::encrypt($purchase->id)) }}" class="mx-3 btn btn-sm align-items-center" data-bs-toggle="tooltip" title="{{__('Show')}}" data-original-title="{{__('Detail')}}">
                                                             <i class="ti ti-eye text-white"></i>
                                                         </a>
                                                     </div>
-                                                @endpermission
-                                                @permission('purchase edit')
+                                                @endif
+                                                @if(Laratrust::hasPermission('purchase edit') || Auth::user()->type == 'Admin Koperasi' || (function_exists('canManagePrices') && canManagePrices()))
                                                     <div class="action-btn bg-info ms-2">
                                                         <a href="{{ route('purchases.edit',\Crypt::encrypt($purchase->id)) }}" class="mx-3 btn btn-sm align-items-center" data-bs-toggle="tooltip" title="Edit" data-original-title="{{__('Edit')}}">
                                                             <i class="ti ti-pencil text-white"></i>
                                                         </a>
                                                     </div>
-                                                @endpermission
-                                                @permission('purchase delete')
+                                                @endif
+                                                @if(Laratrust::hasPermission('purchase delete') || Auth::user()->type == 'Admin Koperasi' || (function_exists('canManagePrices') && canManagePrices()))
                                                     <div class="action-btn bg-danger ms-2">
                                                         {!! Form::open(['method' => 'DELETE', 'route' => ['purchases.destroy', $purchase->id],'class'=>'delete-form-btn','id'=>'delete-form-'.$purchase->id]) !!}
                                                             <a href="#" class="mx-3 btn btn-sm align-items-center show_confirm" data-bs-toggle="tooltip" title="{{__('Delete')}}" data-original-title="{{__('Delete')}}" data-confirm="{{__('Are You Sure?')}}" data-confirm-yes="document.getElementById('delete-form-{{$purchase->id}}').submit();">
@@ -133,7 +140,7 @@
                                                             </a>
                                                         {!! Form::close() !!}
                                                     </div>
-                                                @endpermission
+                                                @endif
                                             </span>
                                         </td>
                                     @endif

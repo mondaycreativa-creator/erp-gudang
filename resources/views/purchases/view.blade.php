@@ -37,7 +37,7 @@
 
 @section('content')
 
-    @permission('purchase send')
+    @if(Laratrust::hasPermission('purchase send') || Auth::user()->type == 'Admin Koperasi' || (function_exists('canManagePrices') && canManagePrices()))
         @if($purchase->status!=4)
             <div class="row">
                 <div class="col-12">
@@ -50,10 +50,9 @@
                                     </div>
                                     <h6 class="text-primary my-3">{{__('Create Purchase')}}</h6>
                                     <p class="text-muted text-sm mb-3"><i class="ti ti-clock mr-2"></i>{{__('Created on ')}}{{company_date_formate($purchase->purchase_date)}}</p>
-                                    @permission('purchase edit')
+                                    @if(Laratrust::hasPermission('purchase edit') || Auth::user()->type == 'Admin Koperasi' || (function_exists('canManagePrices') && canManagePrices()))
                                         <a href="{{ route('purchases.edit',\Crypt::encrypt($purchase->id)) }}" class="btn btn-sm btn-primary" data-bs-toggle="tooltip" data-original-title="{{__('Edit')}}"><i class="ti ti-pencil mr-2"></i>{{__('Edit')}}</a>
-
-                                    @endpermission
+                                    @endif
                                 </div>
                                 <div class="col-md-6 col-lg-4 col-xl-4">
                                     <div class="timeline-icons"><span class="timeline-dots"></span>
@@ -64,16 +63,12 @@
                                         @if($purchase->status!=0)
                                             <i class="ti ti-clock mr-2"></i>{{__('Sent on')}} {{company_date_formate($purchase->send_date)}}
                                         @else
-                                            @permission('purchase send')
-                                                <small>{{__('Status')}} : {{__('Not Sent')}}</small>
-                                            @endpermission
+                                            <small>{{__('Status')}} : {{__('Not Sent')}}</small>
                                         @endif
                                     </p>
 
                                     @if($purchase->status==0)
-                                            @permission('purchase send')
-                                                <a href="{{ route('purchases.sent',$purchase->id) }}" class="btn btn-sm btn-warning" data-bs-toggle="tooltip" data-original-title="{{__('Mark Sent')}}"><i class="ti ti-send mr-2"></i>{{__('Send')}}</a>
-                                            @endpermission
+                                        <a href="{{ route('purchases.sent',$purchase->id) }}" class="btn btn-sm btn-warning" data-bs-toggle="tooltip" data-original-title="{{__('Mark Sent')}}"><i class="ti ti-send mr-2"></i>{{__('Send')}}</a>
                                     @endif
                                 </div>
                                 <div class="col-md-6 col-lg-4 col-xl-4">
@@ -83,9 +78,9 @@
                                     <h6 class="text-info my-3">{{__('Get Paid')}}</h6>
                                     <p class="text-muted text-sm mb-3">{{__('Status')}} : {{__('Awaiting payment')}} </p>
                                     @if($purchase->status!= 0)
-                                                @permission('purchase payment create')
-                                                    <a href="#" data-url="{{ route('purchases.payment',$purchase->id) }}" data-ajax-popup="true" data-title="{{__('Add Payment')}}" class="btn btn-sm btn-info" data-original-title="{{__('Add Payment')}}"><i class="ti ti-report-money mr-2"></i>{{__('Add Payment')}}</a> <br>
-                                                @endpermission
+                                        @if(Laratrust::hasPermission('purchase payment create') || Auth::user()->type == 'Admin Koperasi' || (function_exists('canManagePrices') && canManagePrices()))
+                                            <a href="#" data-url="{{ route('purchases.payment',$purchase->id) }}" data-ajax-popup="true" data-title="{{__('Add Payment')}}" class="btn btn-sm btn-info" data-original-title="{{__('Add Payment')}}"><i class="ti ti-report-money mr-2"></i>{{__('Add Payment')}}</a> <br>
+                                        @endif
                                     @endif
 
                                 </div>
@@ -95,9 +90,9 @@
                 </div>
             </div>
         @endif
-    @endpermission
+    @endif
 
-    @if(\Auth::user()->type=='company')
+    @if(\Auth::user()->type=='company' || \Auth::user()->type == 'Admin Koperasi' || (function_exists('canManagePrices') && canManagePrices()))
     <div class="page-header pt-3">
         <div class="page-block">
             <div class="row gy-4 align-items-center">
@@ -122,29 +117,29 @@
                     </ul>
                 </div>
                 <div class="col-md-6">
-                    @if($purchase->status!=0)
-                        <div class="row justify-content-between align-items-center">    {{-- mb-3--}}
-                            <div class="col-md-12 d-flex align-items-center justify-content-between justify-content-md-end">
-                                @if(!empty($purchasePayment))
-                                    <div class="all-button-box mx-2">
-                                        <a href="#" data-url="{{ route('purchases.debit.note',$purchase->id) }}" data-ajax-popup="true" data-title="{{__('Add Debit Note')}}" class="btn btn-sm btn-primary">
-                                            {{__('Add Debit Note')}}
-                                        </a>
-                                    </div>
-                                @endif
-                                    <div class="all-button-box mx-2">
-                                        <a href="{{ route('purchases.resent',$purchase->id) }}" class="btn btn-sm btn-primary">
-                                            {{__('Resend purchase')}}
-                                        </a>
-                                    </div>
-                                <div class="all-button-box">
-                                    <a href="{{ route('purchases.pdf', Crypt::encrypt($purchase->id))}}" target="_blank" class="btn btn-sm btn-primary">
-                                        {{__('Download')}}
+                    <div class="row justify-content-between align-items-center">    {{-- mb-3--}}
+                        <div class="col-md-12 d-flex align-items-center justify-content-between justify-content-md-end">
+                            @if(!empty($purchasePayment))
+                                <div class="all-button-box mx-2">
+                                    <a href="#" data-url="{{ route('purchases.debit.note',$purchase->id) }}" data-ajax-popup="true" data-title="{{__('Add Debit Note')}}" class="btn btn-sm btn-primary">
+                                        {{__('Add Debit Note')}}
                                     </a>
                                 </div>
+                            @endif
+                            @if($purchase->status!=0)
+                                <div class="all-button-box mx-2">
+                                    <a href="{{ route('purchases.resent',$purchase->id) }}" class="btn btn-sm btn-primary">
+                                        {{__('Resend purchase')}}
+                                    </a>
+                                </div>
+                            @endif
+                            <div class="all-button-box">
+                                <a href="{{ route('purchases.pdf', Crypt::encrypt($purchase->id))}}" target="_blank" class="btn btn-sm btn-primary">
+                                    {{__('Download')}}
+                                </a>
                             </div>
                         </div>
-                    @endif
+                    </div>
                 </div>
             </div>
         </div>

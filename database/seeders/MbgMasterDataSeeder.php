@@ -118,7 +118,7 @@ class MbgMasterDataSeeder extends Seeder
                 'permissions' => [
                     'warehouse manage', 'warehouse show', 'warehouse create', 'warehouse edit',
                     'report warehouse',
-                    'purchase manage', 'purchase show', 'purchase create', 'purchase edit', 'report purchase',
+                    'purchase manage', 'purchase show', 'purchase create', 'purchase edit', 'purchase send', 'purchase delete', 'purchase payment manage', 'purchase payment create', 'report purchase',
                     'product&service manage', 'product&service create', 'product&service edit', 'product service manage',
                     'unit manage', 'category manage', 'category create', 'category edit',
                     'vendor manage', 'vendor create', 'vendor edit', 'vendor show',
