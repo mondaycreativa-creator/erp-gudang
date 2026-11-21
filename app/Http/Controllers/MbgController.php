@@ -23,14 +23,38 @@ class MbgController extends Controller
     private function getUserSppgWarehouseId()
     {
         $user = Auth::user();
-        if ($user->type == 'Admin SPPG Pelutan' || $user->type == 'Asisten Lapangan SPPG Pelutan') {
+        if (!$user) {
+            return null;
+        }
+
+        $type = strtolower($user->type ?? '');
+        $rolesStr = '';
+        if (method_exists($user, 'roles')) {
+            foreach ($user->roles as $role) {
+                $rolesStr .= ' ' . strtolower($role->name ?? '');
+            }
+        }
+        $combined = $type . ' ' . $rolesStr;
+
+        if (str_contains($combined, 'pelutan')) {
             $wh = Warehouse::where('name', 'like', '%Pelutan%')->first();
             return $wh ? $wh->id : null;
         }
-        if ($user->type == 'Admin SPPG Kerep' || $user->type == 'Asisten Lapangan SPPG Kerep') {
+        if (str_contains($combined, 'kerep')) {
             $wh = Warehouse::where('name', 'like', '%Kerep%')->first();
             return $wh ? $wh->id : null;
         }
+
+        // Generic SPPG fallback: if user type/role contains sppg or dapur
+        if (str_contains($combined, 'sppg') || str_contains($combined, 'dapur')) {
+            $sppgWh = Warehouse::where('workspace', getActiveWorkSpace())
+                ->where(function($q) {
+                    $q->where('name', 'like', '%SPPG%')
+                      ->orWhere('name', 'like', '%Dapur%');
+                })->first();
+            return $sppgWh ? $sppgWh->id : null;
+        }
+
         return null;
     }
 
@@ -556,11 +580,30 @@ class MbgController extends Controller
     public function deadstock(Request $request)
     {
         $workspace = getActiveWorkSpace();
-        $warehouses = Warehouse::where('workspace', $workspace)->get();
-        $selectedWarehouseId = $request->warehouse_id ?? ($warehouses->first() ? $warehouses->first()->id : 1);
+        $userWhId = $this->getUserSppgWarehouseId();
 
-        $thresholdWarning = (int) ($request->threshold_warning ?? 3); // 3 hari
-        $thresholdCritical = (int) ($request->threshold_critical ?? 7); // 7 hari
+        if ($userWhId) {
+            $warehouses = Warehouse::where('id', $userWhId)->get();
+            $selectedWarehouseId = $userWhId;
+        } else {
+            $warehouses = Warehouse::where('workspace', $workspace)->get();
+            $selectedWarehouseId = $request->filled('warehouse_id')
+                ? (int) $request->warehouse_id
+                : ($warehouses->first() ? $warehouses->first()->id : 1);
+        }
+
+        $thresholdWarning = $request->filled('threshold_warning')
+            ? max(1, (int) $request->threshold_warning)
+            : 3; // default 3 hari
+        $thresholdCritical = $request->filled('threshold_critical')
+            ? max($thresholdWarning + 1, (int) $request->threshold_critical)
+            : 7; // default 7 hari
+
+        $currentWarehouse = Warehouse::find($selectedWarehouseId);
+        $isKitchen = $currentWarehouse ? (
+            str_contains(strtolower($currentWarehouse->name), 'sppg') ||
+            str_contains(strtolower($currentWarehouse->name), 'dapur')
+        ) : false;
 
         // Query products with stock in the selected warehouse
         $stockRecords = WarehouseProduct::where('warehouse_id', $selectedWarehouseId)
@@ -575,54 +618,98 @@ class MbgController extends Controller
         $warningCount = 0;
         $freshCount = 0;
 
-        $now = now();
+        $today = now()->startOfDay();
 
         foreach ($stockRecords as $record) {
             $product = $record->product;
             if (!$product) continue;
 
             // Find last outgoing activity for this product in this warehouse
-            // 1. From MbgDispatch
+            // 1. From MbgDispatch (outgoing distribution to SPPG)
             $lastDispatchDate = MbgDispatchItem::join('mbg_dispatches', 'mbg_dispatch_items.dispatch_id', '=', 'mbg_dispatches.id')
                 ->where('mbg_dispatches.from_warehouse_id', $selectedWarehouseId)
                 ->where('mbg_dispatch_items.product_id', $product->id)
                 ->max('mbg_dispatches.delivery_date');
 
-            // 2. From MbgKitchenUsage
+            // 2. From standard ERPGo WarehouseTransfer (outgoing transfer)
+            $lastTransferDate = WarehouseTransfer::where('from_warehouse', $selectedWarehouseId)
+                ->where('product_id', $product->id)
+                ->max('date');
+
+            // 3. From MbgKitchenUsage (cooked / consumed in SPPG kitchen)
             $lastUsageDate = MbgKitchenUsageItem::join('mbg_kitchen_usages', 'mbg_kitchen_usage_items.usage_id', '=', 'mbg_kitchen_usages.id')
                 ->where('mbg_kitchen_usages.warehouse_id', $selectedWarehouseId)
                 ->where('mbg_kitchen_usage_items.product_id', $product->id)
                 ->max('mbg_kitchen_usages.usage_date');
 
-            // 3. Fallback to warehouse product updated_at
-            $lastDates = array_filter([$lastDispatchDate, $lastUsageDate]);
-            if (!empty($lastDates)) {
-                $lastMovement = max($lastDates);
+            $lastOutgoingDates = array_filter([$lastDispatchDate, $lastTransferDate, $lastUsageDate]);
+
+            if (!empty($lastOutgoingDates)) {
+                $lastMovement = max($lastOutgoingDates);
+                if ($isKitchen) {
+                    $movementLabel = 'Terakhir Dimasak / Dipakai';
+                    $movementType = 'used';
+                } else {
+                    $movementLabel = 'Terakhir Dikirim / Distribusi';
+                    $movementType = 'dispatched';
+                }
             } else {
-                $lastMovement = $record->updated_at ? $record->updated_at->format('Y-m-d') : $record->created_at->format('Y-m-d');
+                // If never gone out yet, find incoming date (when did it arrive)
+                // From MbgDispatch arriving at this warehouse:
+                $lastIncomingDispatch = MbgDispatchItem::join('mbg_dispatches', 'mbg_dispatch_items.dispatch_id', '=', 'mbg_dispatches.id')
+                    ->where('mbg_dispatches.to_warehouse_id', $selectedWarehouseId)
+                    ->where('mbg_dispatch_items.product_id', $product->id)
+                    ->max('mbg_dispatches.delivery_date');
+
+                // From standard WarehouseTransfer arriving here:
+                $lastIncomingTransfer = WarehouseTransfer::where('to_warehouse', $selectedWarehouseId)
+                    ->where('product_id', $product->id)
+                    ->max('date');
+
+                $lastIncomingDates = array_filter([$lastIncomingDispatch, $lastIncomingTransfer]);
+                if (!empty($lastIncomingDates)) {
+                    $lastMovement = max($lastIncomingDates);
+                    $movementLabel = 'Diterima (Belum Pernah Dipakai)';
+                    $movementType = 'incoming';
+                } else {
+                    $lastMovement = $record->updated_at ? $record->updated_at->format('Y-m-d') : $record->created_at->format('Y-m-d');
+                    $movementLabel = 'Stok Awal (Belum Ada Mutasi)';
+                    $movementType = 'initial';
+                }
             }
 
-            $diffDays = (int) $now->diffInDays(\Carbon\Carbon::parse($lastMovement));
+            $movementCarbon = \Carbon\Carbon::parse($lastMovement)->startOfDay();
+            $diffDays = $movementCarbon->isFuture() ? 0 : (int) $movementCarbon->diffInDays($today);
 
-            $assetValue = $record->quantity * ($product->purchase_price ?? 0);
+            $assetValue = (float) $record->quantity * ($product->purchase_price ?? 0);
             $totalDeadstockValue += $assetValue;
 
             if ($diffDays >= $thresholdCritical) {
-                $status = 'critical'; // Deadstock Kritis (> 7 hari)
+                $status = 'critical'; // Deadstock Kritis (>= critical threshold)
                 $statusText = 'DEADSTOCK / Kritis';
                 $badgeClass = 'bg-danger';
                 $criticalCount++;
                 $totalCriticalValue += $assetValue;
+
+                $recommendation = $isKitchen
+                    ? 'Segera Olah / Masak Menu Hari Ini'
+                    : 'Segera Distribusikan ke Dapur SPPG Hari Ini';
             } elseif ($diffDays >= $thresholdWarning) {
-                $status = 'warning'; // Slow moving (3-7 hari)
+                $status = 'warning'; // Slow moving (warning to critical-1)
                 $statusText = 'Slow Moving / Perhatian';
                 $badgeClass = 'bg-warning text-dark';
                 $warningCount++;
+
+                $recommendation = $isKitchen
+                    ? 'Prioritas Jadwal Masak SPPG Berikutnya'
+                    : 'Rencanakan Pengiriman Distribusi ke SPPG';
             } else {
-                $status = 'fresh'; // Lancar (< 3 hari)
+                $status = 'fresh'; // Lancar / Segar (< warning threshold)
                 $statusText = 'Lancar / Segar';
                 $badgeClass = 'bg-success';
                 $freshCount++;
+
+                $recommendation = 'Perputaran Normal (Stok Aman)';
             }
 
             $deadstockList[] = (object) [
@@ -635,10 +722,13 @@ class MbgController extends Controller
                 'purchase_price' => $product->purchase_price,
                 'asset_value' => $assetValue,
                 'last_movement' => $lastMovement,
+                'movement_label' => $movementLabel,
+                'movement_type' => $movementType,
                 'days_stagnant' => $diffDays,
                 'status' => $status,
                 'status_text' => $statusText,
                 'badge_class' => $badgeClass,
+                'recommendation' => $recommendation,
             ];
         }
 
@@ -647,12 +737,11 @@ class MbgController extends Controller
             return $b->days_stagnant <=> $a->days_stagnant;
         });
 
-        $currentWarehouse = Warehouse::find($selectedWarehouseId);
-
         return view('mbg.deadstock.index', compact(
             'deadstockList', 'warehouses', 'selectedWarehouseId', 'currentWarehouse',
             'thresholdWarning', 'thresholdCritical', 'totalDeadstockValue',
-            'totalCriticalValue', 'criticalCount', 'warningCount', 'freshCount'
+            'totalCriticalValue', 'criticalCount', 'warningCount', 'freshCount',
+            'userWhId', 'isKitchen'
         ));
     }
 
