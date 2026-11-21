@@ -277,12 +277,15 @@ class User extends Authenticatable implements LaratrustUser,MustVerifyEmail,JWTS
             $admin_settings = getAdminAllSetting();
 
             $company_setting = [
-                "currency_format" => !empty($admin_settings['currency_format']) ? $admin_settings['currency_format'] : "1",
-                "defult_currancy" => !empty($admin_settings['defult_currancy']) ? $admin_settings['defult_currancy'] : "USD",
-                "defult_currancy_symbol" => !empty($admin_settings['defult_currancy_symbol']) ? $admin_settings['defult_currancy_symbol'] : "$",
+                "currency_format" => !empty($admin_settings['currency_format']) ? $admin_settings['currency_format'] : "0",
+                "defult_currancy" => !empty($admin_settings['defult_currancy']) && $admin_settings['defult_currancy'] !== 'USD' ? $admin_settings['defult_currancy'] : "IDR",
+                "defult_currancy_symbol" => !empty($admin_settings['defult_currancy_symbol']) && $admin_settings['defult_currancy_symbol'] !== '$' ? $admin_settings['defult_currancy_symbol'] : "Rp",
                 "defult_language" => !empty($admin_settings['defult_language']) ? $admin_settings['defult_language'] : 'id',
-                "defult_timezone" => !empty($admin_settings['defult_timezone']) ? $admin_settings['defult_timezone'] : 'Asia/Kolkata',
+                "defult_timezone" => !empty($admin_settings['defult_timezone']) ? $admin_settings['defult_timezone'] : 'Asia/Jakarta',
                 "site_currency_symbol_position" => "pre",
+                "thousand_separator" => !empty($admin_settings['thousand_separator']) ? $admin_settings['thousand_separator'] : "dot",
+                "decimal_separator" => !empty($admin_settings['decimal_separator']) ? $admin_settings['decimal_separator'] : "comma",
+                "currency_space" => !empty($admin_settings['currency_space']) ? $admin_settings['currency_space'] : "withspace",
                 "site_date_format" => "d-m-Y",
                 "site_time_format" => "g:i A",
                 "title_text" => !empty($admin_settings['title_text']) ? $admin_settings['title_text'] : "WorkDo Dash",

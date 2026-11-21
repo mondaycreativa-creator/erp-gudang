@@ -156,11 +156,14 @@ class DefultSetting extends Seeder
         // admin settings
             $admin = User::where('type','super admin')->first();
             $admin_setting = [
-                "currency_format" => "2",
-                "defult_currancy" => "USD",
-                "defult_currancy_symbol" => "$",
+                "currency_format" => "0",
+                "defult_currancy" => "IDR",
+                "defult_currancy_symbol" => "Rp",
                 "defult_language" => "id",
-                "defult_timezone" => "Asia/Kolkata",
+                "defult_timezone" => "Asia/Jakarta",
+                "thousand_separator" => "dot",
+                "decimal_separator" => "comma",
+                "currency_space" => "withspace",
                 "title_text" => !empty(env('APP_NAME')) ? env('APP_NAME') : 'WorkDo Dash',
                 "footer_text" => "Copyright © ".(!empty(env('APP_NAME')) ? env('APP_NAME') : 'WorkDo Dash'),
                 "landing_page" => "on",

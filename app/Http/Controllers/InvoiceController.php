@@ -1250,7 +1250,7 @@ class InvoiceController extends Controller
                                     <td width="35%" class="form-group">
                                         <div class="input-group">
                                             <input type="number" name="items[0][amount]" class="form-control amount" value="' . (!empty($items[0]) ? $items[0]->amount : 0) . '" placeholder="Amount" required>
-                                            <span class="input-group-text bg-transparent">' . (isset($company_settings['defult_currancy_symbol']) ? $company_settings['defult_currancy_symbol'] : '$') . '</span>
+                                            <span class="input-group-text bg-transparent">' . (!empty($company_settings['defult_currancy_symbol']) && $company_settings['defult_currancy_symbol'] !== '$' ? $company_settings['defult_currancy_symbol'] : currency_symbol()) . '</span>
                                         </div>
                                     </td>
                                     <td width="10%">&nbsp;</td>
@@ -1270,7 +1270,7 @@ class InvoiceController extends Controller
                                         <td width="35%" class="form-group">
                                             <div class="input-group">
                                                 <input type="number" name="items[' . $index . '][amount]" class="form-control amount" value="' . (!empty($items[$index]) ? $items[$index]->amount : 0) . '" placeholder="Amount" required>
-                                                <span class="input-group-text bg-transparent">' . (isset($company_settings['defult_currancy_symbol']) ? $company_settings['defult_currancy_symbol'] : '$') . '</span>
+                                                <span class="input-group-text bg-transparent">' . (!empty($company_settings['defult_currancy_symbol']) && $company_settings['defult_currancy_symbol'] !== '$' ? $company_settings['defult_currancy_symbol'] : currency_symbol()) . '</span>
                                             </div>
                                         </td>
                                         <td width="10%">&nbsp;</td>

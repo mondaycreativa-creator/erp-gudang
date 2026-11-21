@@ -242,6 +242,29 @@ if (!function_exists('getAdminAllSetting')) {
                 $settings = Setting::where('created_by', 1)->pluck('value', 'key')->toArray();
             }
 
+            // Fallback defaults for currency & formatting (Indonesian Rupiah priority if IDR / unset)
+            if (empty($settings['defult_currancy'])) {
+                $settings['defult_currancy'] = 'IDR';
+            }
+            if (empty($settings['defult_currancy_symbol']) || ($settings['defult_currancy'] === 'IDR' && $settings['defult_currancy_symbol'] === '$')) {
+                $settings['defult_currancy_symbol'] = 'Rp';
+            }
+            if (!isset($settings['currency_format']) || $settings['currency_format'] === '') {
+                $settings['currency_format'] = ($settings['defult_currancy'] === 'IDR') ? '0' : '2';
+            }
+            if (!isset($settings['thousand_separator'])) {
+                $settings['thousand_separator'] = ($settings['defult_currancy'] === 'IDR') ? 'dot' : 'comma';
+            }
+            if (!isset($settings['decimal_separator'])) {
+                $settings['decimal_separator'] = ($settings['defult_currancy'] === 'IDR') ? 'comma' : 'dot';
+            }
+            if (!isset($settings['currency_space'])) {
+                $settings['currency_space'] = 'withspace';
+            }
+            if (!isset($settings['site_currency_symbol_position'])) {
+                $settings['site_currency_symbol_position'] = 'pre';
+            }
+
             return $settings;
         });
     }
@@ -250,29 +273,69 @@ if (!function_exists('getAdminAllSetting')) {
 if (!function_exists('getCompanyAllSetting')) {
     function getCompanyAllSetting($user_id = null, $workspace = null)
     {
+        $admin_settings = getAdminAllSetting();
+
         if (!empty($user_id)) {
             $user = User::find($user_id);
+        } elseif (Auth::check()) {
+            $user = Auth::user();
         } else {
-            $user =  auth()->user();
+            $user = null;
         }
 
-        $workspace = $workspace ?? $user->active_workspace;
+        if (empty($user)) {
+            return $admin_settings;
+        }
 
-        // // Check if the user is not 'company' or 'super admin' and find the creator
+        // Check if the user is not 'company' or 'super admin' and find the creator
         if (!in_array($user->type, ['company', 'super admin'])) {
-            $user = User::find($user->created_by);
+            $creator = User::find($user->created_by);
+            if (!empty($creator)) {
+                $user = $creator;
+            }
         }
 
-        if (!empty($user)) {
-            $key = 'company_settings_' . $workspace . '_' . $user->id;
-            return Cache::rememberForever($key, function () use ($user, $workspace) {
-                $settings = [];
-                $settings = Setting::where('created_by', $user->id)->where('workspace', $workspace)->pluck('value', 'key')->toArray();
-                return $settings;
-            });
+        if (empty($workspace)) {
+            $workspace = (!empty($user->active_workspace) && $user->active_workspace > 0)
+                ? $user->active_workspace
+                : getActiveWorkSpace($user->id);
         }
 
-        return [];
+        $key = 'company_settings_' . $workspace . '_' . $user->id;
+        return Cache::rememberForever($key, function () use ($user, $workspace, $admin_settings) {
+            $settings = Setting::where('created_by', $user->id)
+                ->where('workspace', $workspace)
+                ->pluck('value', 'key')
+                ->toArray();
+
+            if (empty($settings)) {
+                // If not found in this specific workspace, try workspace 0 or any workspace for this company
+                $settings = Setting::where('created_by', $user->id)
+                    ->where(function($q) {
+                        $q->where('workspace', 0)->orWhere('workspace', 1);
+                    })
+                    ->pluck('value', 'key')
+                    ->toArray();
+
+                if (empty($settings)) {
+                    $settings = Setting::where('created_by', $user->id)
+                        ->pluck('value', 'key')
+                        ->toArray();
+                }
+            }
+
+            // Merge admin settings as baseline defaults for any missing company setting keys
+            $merged = array_merge($admin_settings, $settings);
+
+            // Ensure IDR currency uses Rp symbol even if misconfigured as $
+            if (isset($merged['defult_currancy']) && $merged['defult_currancy'] === 'IDR') {
+                if (empty($merged['defult_currancy_symbol']) || $merged['defult_currancy_symbol'] === '$') {
+                    $merged['defult_currancy_symbol'] = 'Rp';
+                }
+            }
+
+            return $merged;
+        });
     }
 }
 
@@ -282,6 +345,12 @@ if (!function_exists('admin_setting')) {
         if ($key) {
             $admin_settings = getAdminAllSetting();
             $setting = (array_key_exists($key, $admin_settings)) ? $admin_settings[$key] : null;
+            if ($key === 'defult_currancy_symbol' && ($setting === '$' || empty($setting))) {
+                $curr = $admin_settings['defult_currancy'] ?? 'IDR';
+                if ($curr === 'IDR') {
+                    return 'Rp';
+                }
+            }
             return $setting;
         }
     }
@@ -296,8 +365,31 @@ if (!function_exists('company_setting')) {
             if (!empty($company_settings)) {
                 $setting = (array_key_exists($key, $company_settings)) ? $company_settings[$key] : null;
             }
+            if ($setting === null || $setting === '') {
+                $setting = admin_setting($key);
+            }
+            if ($key === 'defult_currancy_symbol' && ($setting === '$' || empty($setting))) {
+                $curr = company_setting('defult_currancy', $user_id, $workspace) ?: admin_setting('defult_currancy');
+                if ($curr === 'IDR' || empty($curr)) {
+                    return 'Rp';
+                }
+            }
             return $setting;
         }
+    }
+}
+
+if (!function_exists('currency_symbol')) {
+    function currency_symbol($company_id = null, $workspace = null)
+    {
+        $symbol = company_setting('defult_currancy_symbol', $company_id, $workspace);
+        if (empty($symbol) || $symbol === '$') {
+            $curr = company_setting('defult_currancy', $company_id, $workspace) ?: admin_setting('defult_currancy');
+            if ($curr === 'IDR' || empty($curr)) {
+                return 'Rp';
+            }
+        }
+        return !empty($symbol) ? $symbol : 'Rp';
     }
 }
 
@@ -319,11 +411,23 @@ if (!function_exists('comapnySettingCacheForget')) {
             if (empty($user_id)) {
                 $user_id = creatorId();
             }
-            if (empty($workspace)) {
-                $workspace = getActiveWorkSpace();
+            $workspaces = array_unique(array_filter([
+                $workspace,
+                getActiveWorkSpace(),
+                Auth::check() ? Auth::user()->active_workspace : null,
+                1,
+                0
+            ]));
+
+            foreach ($workspaces as $ws) {
+                Cache::forget('company_settings_' . $ws . '_' . $user_id);
             }
-            $key = 'company_settings_' . $workspace . '_' . $user_id;
-            Cache::forget($key);
+            if (!empty($user_id)) {
+                Cache::forget('company_settings__' . $user_id);
+                Cache::forget('company_settings_0_' . $user_id);
+                Cache::forget('company_settings_1_' . $user_id);
+            }
+            Cache::forget('admin_settings');
         } catch (\Exception $e) {
             \Log::error('comapnySettingCacheForget :' . $e->getMessage());
         }
@@ -1608,8 +1712,16 @@ if (!function_exists('dark_logo')) {
 if (!function_exists('currency_format')) {
     function currency_format($price, $company_id = null, $workspace = null)
     {
+        $format = company_setting('currency_format', $company_id, $workspace);
+        if ($format === null || $format === '') {
+            $format = admin_setting('currency_format');
+        }
+        if ($format === null || $format === '') {
+            $code = company_setting('defult_currancy', $company_id, $workspace) ?: admin_setting('defult_currancy');
+            $format = ($code === 'IDR') ? 0 : 2;
+        }
 
-        return number_format($price, company_setting('currency_format', $company_id, $workspace), '.', '');
+        return number_format((float)$price, (int)$format, '.', '');
     }
 }
 
@@ -1624,40 +1736,85 @@ if (!function_exists('currency_format_with_sym')) {
         } else {
             $company_settings = getCompanyAllSetting();
         }
-        $symbol_position = 'pre';
-        $currancy_symbol = '$';
-        $format = '1';
-        $number = explode('.', $price);
-        $length = strlen(trim($number[0]));
-        if ($length > 3) {
-            $decimal_separator  = isset($company_settings['decimal_separator']) && $company_settings['decimal_separator'] === 'dot' ? ',' : ',';
-            $thousand_separator = isset($company_settings['thousand_separator']) && $company_settings['thousand_separator'] === 'dot' ? '.' : ',';
-        } else {
-            $decimal_separator  = isset($company_settings['decimal_separator']) == 'dot'  ? '.' : ',';
-            $thousand_separator = isset($company_settings['thousand_separator']) == 'dot' ? '.' : ',';
-        }
-        if (isset($company_settings['site_currency_symbol_position'])) {
-            $symbol_position = $company_settings['site_currency_symbol_position'];
-        }
-        if (isset($company_settings['defult_currancy_symbol'])) {
-            $currancy_symbol = $company_settings['defult_currancy_symbol'];
-        }
-        if (isset($company_settings['currency_format'])) {
-            $format = $company_settings['currency_format'];
-        }
-        if (isset($company_settings['currency_space'])) {
-            $currency_space = isset($company_settings['currency_space']) ? $company_settings['currency_space'] : '';
-        }
-        if (isset($company_settings['site_currency_symbol_name'])) {
-            $defult_currancy = $company_settings['defult_currancy'];
-            $defult_currancy_symbol = $company_settings['defult_currancy_symbol'];
-            $currancy_symbol = $company_settings['site_currency_symbol_name'] == 'symbol' ? $defult_currancy_symbol : $defult_currancy;
+
+        $admin_settings = getAdminAllSetting();
+
+        // 1. Determine currency code and symbol
+        $defult_currancy = !empty($company_settings['defult_currancy'])
+            ? $company_settings['defult_currancy']
+            : (!empty($admin_settings['defult_currancy']) ? $admin_settings['defult_currancy'] : 'IDR');
+
+        $defult_currancy_symbol = !empty($company_settings['defult_currancy_symbol'])
+            ? $company_settings['defult_currancy_symbol']
+            : (!empty($admin_settings['defult_currancy_symbol'])
+                ? $admin_settings['defult_currancy_symbol']
+                : ($defult_currancy === 'IDR' ? 'Rp' : '$'));
+
+        // If the currency is IDR and symbol is still '$' (misconfiguration or un-set), enforce 'Rp'
+        if ($defult_currancy === 'IDR' && $defult_currancy_symbol === '$') {
+            $defult_currancy_symbol = 'Rp';
         }
 
-        return (
-            ($symbol_position == "pre")  ?  $currancy_symbol : '') . ((isset($currency_space) && $currency_space) == 'withspace' ? ' ' : '')
-            . number_format($price, $format, $decimal_separator, $thousand_separator) . ((isset($currency_space) && $currency_space) == 'withspace' ? ' ' : '') .
-            (($symbol_position == "post") ?  $currancy_symbol : '');
+        $symbol_type = !empty($company_settings['site_currency_symbol_name'])
+            ? $company_settings['site_currency_symbol_name']
+            : (!empty($admin_settings['site_currency_symbol_name']) ? $admin_settings['site_currency_symbol_name'] : 'symbol');
+
+        $currancy_symbol = ($symbol_type === 'symbol') ? $defult_currancy_symbol : $defult_currancy;
+
+        // 2. Symbol position
+        $symbol_position = !empty($company_settings['site_currency_symbol_position'])
+            ? $company_settings['site_currency_symbol_position']
+            : (!empty($admin_settings['site_currency_symbol_position']) ? $admin_settings['site_currency_symbol_position'] : 'pre');
+
+        // 3. Format (number of decimal places)
+        if (isset($company_settings['currency_format']) && $company_settings['currency_format'] !== '') {
+            $format = (int)$company_settings['currency_format'];
+        } elseif (isset($admin_settings['currency_format']) && $admin_settings['currency_format'] !== '') {
+            $format = (int)$admin_settings['currency_format'];
+        } else {
+            // Default: for IDR usually 0 decimals, for other currencies 2
+            $format = ($defult_currancy === 'IDR' || $currancy_symbol === 'Rp') ? 0 : 2;
+        }
+
+        // 4. Separators
+        $dec_setting = isset($company_settings['decimal_separator'])
+            ? $company_settings['decimal_separator']
+            : (isset($admin_settings['decimal_separator']) ? $admin_settings['decimal_separator'] : '');
+
+        $thou_setting = isset($company_settings['thousand_separator'])
+            ? $company_settings['thousand_separator']
+            : (isset($admin_settings['thousand_separator']) ? $admin_settings['thousand_separator'] : '');
+
+        if ($dec_setting === 'dot') {
+            $decimal_separator = '.';
+        } elseif ($dec_setting === 'comma') {
+            $decimal_separator = ',';
+        } else {
+            $decimal_separator = ($thou_setting === 'dot' || $currancy_symbol === 'Rp' || $defult_currancy === 'IDR') ? ',' : '.';
+        }
+
+        if ($thou_setting === 'dot') {
+            $thousand_separator = '.';
+        } elseif ($thou_setting === 'comma') {
+            $thousand_separator = ',';
+        } else {
+            $thousand_separator = ($decimal_separator === ',') ? '.' : ',';
+        }
+
+        // 5. Space between symbol and price
+        $currency_space = isset($company_settings['currency_space'])
+            ? $company_settings['currency_space']
+            : (isset($admin_settings['currency_space']) ? $admin_settings['currency_space'] : 'withspace');
+
+        $space = ($currency_space === 'withspace' || !isset($currency_space)) ? ' ' : '';
+
+        $formatted_number = number_format((float)$price, $format, $decimal_separator, $thousand_separator);
+
+        if ($symbol_position === 'post') {
+            return $formatted_number . $space . $currancy_symbol;
+        }
+
+        return $currancy_symbol . $space . $formatted_number;
     }
 }
 
@@ -1681,45 +1838,57 @@ if (!function_exists('company_date_formate')) {
 if (!function_exists('super_currency_format_with_sym')) {
     function super_currency_format_with_sym($price)
     {
-
         $admin_settings = getAdminAllSetting();
-        $symbol_position = 'pre';
-        $symbol = '$';
-        $format = '1';
-        $number = explode('.', $price);
-        $length = strlen(trim($number[0]));
-        if ($length > 3) {
-            $decimal_separator  = isset($admin_settings['decimal_separator']) && $admin_settings['decimal_separator'] === 'dot' ? ',' : ',';
-            $thousand_separator = isset($admin_settings['thousand_separator']) && $admin_settings['thousand_separator'] === 'dot' ? '.' : ',';
+
+        $defult_currancy = !empty($admin_settings['defult_currancy']) ? $admin_settings['defult_currancy'] : 'IDR';
+        $defult_currancy_symbol = !empty($admin_settings['defult_currancy_symbol'])
+            ? $admin_settings['defult_currancy_symbol']
+            : ($defult_currancy === 'IDR' ? 'Rp' : '$');
+
+        if ($defult_currancy === 'IDR' && $defult_currancy_symbol === '$') {
+            $defult_currancy_symbol = 'Rp';
+        }
+
+        $symbol_type = !empty($admin_settings['site_currency_symbol_name']) ? $admin_settings['site_currency_symbol_name'] : 'symbol';
+        $symbol = ($symbol_type === 'symbol') ? $defult_currancy_symbol : $defult_currancy;
+
+        $symbol_position = !empty($admin_settings['site_currency_symbol_position']) ? $admin_settings['site_currency_symbol_position'] : 'pre';
+
+        if (isset($admin_settings['currency_format']) && $admin_settings['currency_format'] !== '') {
+            $format = (int)$admin_settings['currency_format'];
         } else {
-            $decimal_separator  = isset($admin_settings['decimal_separator']) == 'dot'  ? '.' : ',';
-            $thousand_separator = isset($admin_settings['thousand_separator']) == 'dot' ? '.' : ',';
+            $format = ($defult_currancy === 'IDR' || $symbol === 'Rp') ? 0 : 2;
         }
 
-        if (isset($admin_settings['site_currency_symbol_position']) && $admin_settings['site_currency_symbol_position'] == "post") {
-            $symbol_position = 'post';
+        $dec_setting = isset($admin_settings['decimal_separator']) ? $admin_settings['decimal_separator'] : '';
+        $thou_setting = isset($admin_settings['thousand_separator']) ? $admin_settings['thousand_separator'] : '';
+
+        if ($dec_setting === 'dot') {
+            $decimal_separator = '.';
+        } elseif ($dec_setting === 'comma') {
+            $decimal_separator = ',';
+        } else {
+            $decimal_separator = ($thou_setting === 'dot' || $symbol === 'Rp' || $defult_currancy === 'IDR') ? ',' : '.';
         }
 
-        if (isset($admin_settings['defult_currancy_symbol'])) {
-            $symbol = $admin_settings['defult_currancy_symbol'];
+        if ($thou_setting === 'dot') {
+            $thousand_separator = '.';
+        } elseif ($thou_setting === 'comma') {
+            $thousand_separator = ',';
+        } else {
+            $thousand_separator = ($decimal_separator === ',') ? '.' : ',';
         }
 
-        if (isset($admin_settings['currency_format'])) {
-            $format = $admin_settings['currency_format'];
+        $currency_space = isset($admin_settings['currency_space']) ? $admin_settings['currency_space'] : 'withspace';
+        $space = ($currency_space === 'withspace' || !isset($currency_space)) ? ' ' : '';
+
+        $formatted_number = number_format((float)$price, $format, $decimal_separator, $thousand_separator);
+
+        if ($symbol_position === 'post') {
+            return $formatted_number . $space . $symbol;
         }
 
-        if (isset($admin_settings['currency_space'])) {
-            $currency_space = isset($admin_settings['currency_space']) ? $admin_settings['currency_space'] : '';
-        }
-        if (isset($admin_settings['site_currency_symbol_name'])) {
-            $defult_currancy = $admin_settings['defult_currancy'];
-            $defult_currancy_symbol = $admin_settings['defult_currancy_symbol'];
-            $symbol = $admin_settings['site_currency_symbol_name'] == 'symbol' ? $defult_currancy_symbol : $defult_currancy;
-        }
-        return (
-            ($symbol_position == "pre")  ?  $symbol : '') . ((isset($currency_space) && $currency_space) == 'withspace' ? ' ' : '')
-            . number_format($price, $format, $decimal_separator, $thousand_separator) . ((isset($currency_space) && $currency_space) == 'withspace' ? ' ' : '') .
-            (($symbol_position == "post") ?  $symbol : '');
+        return $symbol . $space . $formatted_number;
     }
 }
 if (!function_exists('company_datetime_formate')) {

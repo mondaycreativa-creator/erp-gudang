@@ -46,7 +46,7 @@
                     <label for="amount">{{ __('Amount') }}</label>
                     <div class="input-group">
                         <span class="input-group-prepend"><span
-                                class="input-group-text">{{ !empty(company_setting('defult_currancy', $invoice->created_by, $invoice->workspace)) ? company_setting('defult_currancy', $invoice->created_by, $invoice->workspace) : '$' }}</span>
+                                class="input-group-text">{{ !empty(company_setting('defult_currancy', $invoice->created_by, $invoice->workspace)) && company_setting('defult_currancy', $invoice->created_by, $invoice->workspace) !== 'USD' ? company_setting('defult_currancy', $invoice->created_by, $invoice->workspace) : (admin_setting('defult_currancy') ?: 'IDR') }}</span>
                         </span>
                         <input class="form-control" required="required" min="0" name="amount" type="number"
                             value="{{ $invoice->getDue() }}" min="0" step="0.01"

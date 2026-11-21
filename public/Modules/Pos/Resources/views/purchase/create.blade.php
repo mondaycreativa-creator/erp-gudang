@@ -387,7 +387,7 @@
 @endpush
 
 @php
-    $currancy_symbol = !empty(company_setting('defult_currancy_symbol')) ? company_setting('defult_currancy_symbol') : '$';
+    $currancy_symbol = currency_symbol();
 @endphp
 
 @section('content')

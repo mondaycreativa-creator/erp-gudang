@@ -256,7 +256,7 @@
                                     <div class="col-6">
                                         <div class="d-flex text-end justify-content-end align-items-center">
                                             <span
-                                                class="input-group-text bg-transparent">{{ isset($company_settings['defult_currancy_symbol']) ? $company_settings['defult_currancy_symbol'] : '$' }}</span>
+                                                class="input-group-text bg-transparent">{{ !empty($company_settings['defult_currancy_symbol']) && $company_settings['defult_currancy_symbol'] !== '$' ? $company_settings['defult_currancy_symbol'] : currency_symbol() }}</span>
                                             {{ Form::number('discount', null, ['class' => ' form-control discount', 'required' => 'required', 'placeholder' => __('Discount')]) }}
                                             {{ Form::hidden('discount_hidden', '', ['id' => 'discount_hidden']) }}
                                         </div>
@@ -764,7 +764,7 @@
 
     <script>
         var site_currency_symbol_position = "{{isset($company_settings['site_currency_symbol_position']) ? $company_settings['site_currency_symbol_position'] : 'pre'}}";
-        var site_currency_symbol = "{{isset($company_settings['defult_currancy_symbol']) ? $company_settings['defult_currancy_symbol'] : '$'}}";
+        var site_currency_symbol = "{{ !empty($company_settings['defult_currancy_symbol']) && $company_settings['defult_currancy_symbol'] !== '$' ? $company_settings['defult_currancy_symbol'] : currency_symbol() }}";
     </script>
 
 

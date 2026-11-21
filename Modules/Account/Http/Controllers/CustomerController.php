@@ -413,7 +413,7 @@ class CustomerController extends Controller
         }
 
         $invoice_payment=$invoice_payment->get();
-        $currencySymbol = !empty(company_setting('defult_currancy_symbol')) ? company_setting('defult_currancy_symbol') : '$' ;
+        $currencySymbol = currency_symbol();
         $responseData = [
             'data' => $invoice_payment,
             'currencySymbol' => $currencySymbol,

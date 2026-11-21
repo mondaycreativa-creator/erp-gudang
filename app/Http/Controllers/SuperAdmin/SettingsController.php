@@ -476,11 +476,11 @@ class SettingsController extends Controller
         unset($post['_method']);
         if (isset($post['defult_currancy'])) {
             $data = explode('-', $post['defult_currancy']);
-            $post['defult_currancy_symbol'] = $data[0];
-            $post['defult_currancy']        = $data[1];
-        } else {
-            $post['defult_currancy']        = 'USD';
-            $post['defult_currancy_symbol'] = '$';
+            $post['defult_currancy_symbol'] = $data[0] ?? '';
+            $post['defult_currancy']        = $data[1] ?? $post['defult_currancy'];
+            if ($post['defult_currancy'] === 'IDR' && (empty($post['defult_currancy_symbol']) || $post['defult_currancy_symbol'] === '$')) {
+                $post['defult_currancy_symbol'] = 'Rp';
+            }
         }
         if (isset($post['site_currency_symbol_position'])) {
             $post['site_currency_symbol_position'] = !empty($request->site_currency_symbol_position) ? $request->site_currency_symbol_position : 'pre';
@@ -495,52 +495,54 @@ class SettingsController extends Controller
 
             // Check if the record exists, and update or insert accordingly
             Setting::updateOrInsert($data, ['value' => $value]);
+
+            if (getActiveWorkSpace() != 0) {
+                Setting::updateOrInsert([
+                    'key' => $key,
+                    'workspace' => 0,
+                    'created_by' => creatorId(),
+                ], ['value' => $value]);
+            }
         }
         // Settings Cache forget
         AdminSettingCacheForget();
         comapnySettingCacheForget();
+        Cache::flush();
         return redirect()->back()->with('success', __('Currency Setting save successfully.'));
     }
     public function updateNoteValue(Request $request)
     {
-        $symbol_position = 'pre';
-        $symbol = '$';
-        $format = '1';
-        $price  = '10000';
-        $number = explode('.', $price);
-        $length = strlen(trim($number[0]));
-        $currency_symbol = explode('-',$request->defult_currancy);
+        $symbol_position = $request->site_currency_symbol_position === 'post' ? 'post' : 'pre';
+        $format = isset($request->currency_format) ? (int)$request->currency_format : 0;
+        $price = '10000';
 
-        if ($length > 3) {
-            $decimal_separator  = isset($request->decimal_separator) && $request->decimal_separator === 'dot' ? ',' : ',';
-            $thousand_separator = isset($request->thousand_separator) && $request->thousand_separator === 'dot' ? '.' : ',';
+        $currency_parts = explode('-', $request->defult_currancy ?? '');
+        $code = $currency_parts[1] ?? ($request->defult_currancy ?? 'IDR');
+        $sym = $currency_parts[0] ?? 'Rp';
+        if ($code === 'IDR' && ($sym === '$' || empty($sym))) {
+            $sym = 'Rp';
+        }
+
+        if (isset($request->site_currency_symbol_name) && $request->site_currency_symbol_name === 'symbolname') {
+            $symbol = $code;
         } else {
-            $decimal_separator  = isset($request->decimal_separator) == 'dot'  ? '.' : ',';
-            $thousand_separator = isset($request->thousand_separator) == 'dot' ? '.' : ',';
+            $symbol = $sym;
         }
 
-        if (isset($request->site_currency_symbol_position) && $request->site_currency_symbol_position == "post") {
-            $symbol_position = 'post';
-        }
+        $dec_setting = $request->decimal_separator ?? 'comma';
+        $thou_setting = $request->thousand_separator ?? 'dot';
 
-        if (isset($request->defult_currancy)) {
-            $symbol = $request->defult_currancy;
-        }
+        $decimal_separator = ($dec_setting === 'dot') ? '.' : ',';
+        $thousand_separator = ($thou_setting === 'dot') ? '.' : ',';
 
-        if (isset($request->currency_format)) {
-            $format = $request->currency_format;
-        }
-        if (isset($request->currency_space)) {
-            $currency_space = isset($request->currency_space) ? $request->currency_space : '';
-        }
-        if (isset($request->site_currency_symbol_name)) {
-            $symbol = $request->site_currency_symbol_name == 'symbol' ? $currency_symbol[0] : $currency_symbol[1];
-        }
-        $formatted_price = (
-            ($symbol_position == "pre")  ?  $symbol : '') . (isset($currency_space) && $currency_space == 'withspace' ? ' ' : '')
-            . number_format($price, $format, $decimal_separator, $thousand_separator) . (isset($currency_space) && $currency_space == 'withspace' ? ' ' : '') .
-            (($symbol_position == "post") ?  $symbol : '');
-        return response()->json(['success' => true,'formatted_price' => $formatted_price]);
+        $currency_space = $request->currency_space ?? 'withspace';
+        $space = ($currency_space === 'withspace') ? ' ' : '';
+
+        $formatted_price = ($symbol_position === 'pre' ? $symbol . $space : '')
+            . number_format((float)$price, $format, $decimal_separator, $thousand_separator)
+            . ($symbol_position === 'post' ? $space . $symbol : '');
+
+        return response()->json(['success' => true, 'formatted_price' => $formatted_price]);
     }
 
 }

@@ -413,7 +413,7 @@ class VenderController extends Controller
             $bill_payment->whereBetween('date',  [$data['from_date'], $data['until_date']]);
         }
         $bill_payment=$bill_payment->get();
-        $currencySymbol = !empty(company_setting('defult_currancy_symbol')) ? company_setting('defult_currancy_symbol') : '$' ;
+        $currencySymbol = currency_symbol();
         $responseData = [
             'data' => $bill_payment,
             'currencySymbol' => $currencySymbol,

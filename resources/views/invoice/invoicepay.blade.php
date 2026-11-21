@@ -905,7 +905,7 @@
                                                         <label for="amount">{{ __('Amount') }}</label>
                                                         <div class="input-group">
                                                             <span class="input-group-prepend"><span
-                                                                    class="input-group-text">{{ !empty($company_settings['defult_currancy']) ? $company_settings['defult_currancy'] : '$' }}</span></span>
+                                                                    class="input-group-text">{{ !empty($company_settings['defult_currancy']) && $company_settings['defult_currancy'] !== 'USD' ? $company_settings['defult_currancy'] : (admin_setting('defult_currancy') ?: 'IDR') }}</span></span>
                                                             <input class="form-control" required="required"
                                                                 min="0" name="amount" type="number"
                                                                 value="{{ $invoice->getDue() }}" min="0"

@@ -388,7 +388,7 @@
                                  @foreach (currency() as $c)
                                      <option value="{{ $c->symbol }}-{{ $c->code }}"
                                          data-symbol="{{ $c->symbol }}"
-                                         {{ isset($settings['defult_currancy']) && $settings['defult_currancy'] == $c->code ? 'selected' : '' }}>
+                                         {{ (isset($settings['defult_currancy']) && ($settings['defult_currancy'] == $c->code || $settings['defult_currancy'] == ($c->symbol . '-' . $c->code))) || (!isset($settings['defult_currancy']) && $c->code == 'IDR') ? 'selected' : '' }}>
                                          {{ $c->symbol }} - {{ $c->code }} </option>
                                  @endforeach
                              </select>
