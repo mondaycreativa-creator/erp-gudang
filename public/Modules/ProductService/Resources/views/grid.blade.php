@@ -28,11 +28,11 @@
             data-bs-toggle="tooltip" data-title="{{ __(' Product Stock') }}" title="{{ __('Product Stock') }}"><i
                 class="ti ti-shopping-cart"></i></a>
 
-        @permission('product&service create')
+        @if(\Auth::user()->isAbleTo('product&service create') || \Auth::user()->isAbleTo('product&service manage'))
             <a href="{{ route('product-service.create') }}" class="btn btn-sm btn-primary btn-icon" data-bs-toggle="tooltip"
                 data-bs-placement="top" data-title="{{ __('Create New Product') }}" title="{{ __('Create') }}"><i
                     class="ti ti-plus text-white"></i></a>
-        @endpermission
+        @endif
     </div>
 @endsection
 

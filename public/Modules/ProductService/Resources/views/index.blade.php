@@ -6,7 +6,7 @@
 {{ __('Items') }}
 @endsection
 @section('page-action')
-@permission('product&service create')
+@if(\Auth::user()->isAbleTo('product&service create') || \Auth::user()->isAbleTo('product&service manage'))
 <div>
         @stack('addButtonHook')
         @permission('product&service import')
@@ -23,7 +23,7 @@
 
 
     </div>
-@endpermission
+@endif
 @endsection
 @section('content')
 <div class="row">
@@ -121,7 +121,7 @@
                                     <td>{{ currency_format_with_sym($productService->purchase_price )}}</td>
                                 @endif
                                 <td>
-                                    {!! str_replace(',', ',<br>', $productService->tax_names) !!}
+                                    {!! str_replace(',', ',<br>', $productService->tax_names ?? '') !!}
                                 </td>
                                 <td>{{ optional($productService->categorys)->name?? '' }}</td>
                                 <td>{{ optional($productService->units)->name ??'' }}</td>

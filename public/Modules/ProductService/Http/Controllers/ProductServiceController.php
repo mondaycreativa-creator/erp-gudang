@@ -481,8 +481,11 @@ class ProductServiceController extends Controller
             $new_qty = $request->quantity;
             $total_qty = $new_qty - $old_qty;
             if (!empty($request->warehouse_id)) {
-
-                Purchase::addWarehouseStock($productService->id, $total_qty, $request->warehouse_id);
+                try {
+                    Purchase::addWarehouseStock($productService->id, $total_qty, (int)$request->warehouse_id);
+                } catch (\Throwable $e) {
+                    \Log::warning('Update addWarehouseStock warning: ' . $e->getMessage());
+                }
             }
 
             $productService->name           = $request->name;
@@ -504,17 +507,31 @@ class ProductServiceController extends Controller
 
                 $name = time() . "_" . $request->image->getClientOriginalName();
                 $path = upload_file($request,'image',$name,'products');
-                $productService->image          = empty($path) ? null : $path['url'];
+                $productService->image          = (is_array($path) && !empty($path['url'])) ? $path['url'] : null;
             }
             $productService->category_id    = $request->category_id;
-            $productService->warehouse_id    = $request->warehouse_id;
+            $productService->warehouse_id   = !empty($request->warehouse_id) ? (int)$request->warehouse_id : null;
+            if (isset($request->sale_chartaccount_id)) {
+                $productService->sale_chartaccount_id = !empty($request->sale_chartaccount_id) ? (int)$request->sale_chartaccount_id : 0;
+            }
+            if (isset($request->expense_chartaccount_id)) {
+                $productService->expense_chartaccount_id = !empty($request->expense_chartaccount_id) ? (int)$request->expense_chartaccount_id : 0;
+            }
             $productService->save();
 
-            event(new UpdateProduct($request,$productService));
+            try {
+                event(new UpdateProduct($request,$productService));
+            } catch (\Throwable $e) {
+                \Log::warning('UpdateProduct event warning: ' . $e->getMessage());
+            }
 
             if(module_is_active('CustomField'))
             {
-                \Modules\CustomField\Entities\CustomField::saveData($productService, $request->customField);
+                try {
+                    \Modules\CustomField\Entities\CustomField::saveData($productService, $request->customField);
+                } catch (\Throwable $e) {
+                    \Log::warning('CustomField saveData warning: ' . $e->getMessage());
+                }
             }
             return redirect()->route('product-service.index')->with('success', __('Product successfully updated.'));
         }
@@ -537,51 +554,90 @@ class ProductServiceController extends Controller
                 $product_type['music institute'] = 'Music Institute';
             }
             $allowedIds = function_exists('globalAdminUserIds') ? globalAdminUserIds() : [0, 1, 2];
-            $productServices = ProductService::select('product_services.*', DB::raw('GROUP_CONCAT(taxes.name) as tax_names'))
-            ->leftJoin('taxes', function ($join) {
-                $join->on('taxes.id', '=', DB::raw("SUBSTRING_INDEX(SUBSTRING_INDEX(product_services.tax_id, ',', numbers.n), ',', -1)"))
-                    ->crossJoin(DB::raw('(SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4) numbers'))
-                    ->whereRaw('CHAR_LENGTH(product_services.tax_id) - CHAR_LENGTH(REPLACE(product_services.tax_id, ",", "")) + 1 >= numbers.n');
-            })
-            ->whereIn('product_services.created_by', $allowedIds)
-            ->groupBy('product_services.id');
-            if (!empty($request->category))
-            {
-                $productServices = $productServices->where('product_services.category_id', $request->category);
+            try {
+                $query = ProductService::select('product_services.*', DB::raw('GROUP_CONCAT(taxes.name) as tax_names'))
+                    ->leftJoin('taxes', function ($join) {
+                        $join->on('taxes.id', '=', DB::raw("SUBSTRING_INDEX(SUBSTRING_INDEX(product_services.tax_id, ',', numbers.n), ',', -1)"))
+                            ->crossJoin(DB::raw('(SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4) numbers'))
+                            ->whereRaw('CHAR_LENGTH(product_services.tax_id) - CHAR_LENGTH(REPLACE(product_services.tax_id, ",", "")) + 1 >= numbers.n');
+                    })
+                    ->whereIn('product_services.created_by', $allowedIds)
+                    ->groupBy('product_services.id');
+                if (!empty($request->category))
+                {
+                    $query = $query->where('product_services.category_id', $request->category);
+                }
+                if (!empty($request->item_type))
+                {
+                    $query = $query->where('product_services.type', $request->item_type);
+                }
+                $productServices = $query->with(['categorys', 'units'])->get();
+            } catch (\Throwable $e) {
+                $fallbackQuery = ProductService::whereIn('product_services.created_by', $allowedIds);
+                if (!empty($request->category))
+                {
+                    $fallbackQuery = $fallbackQuery->where('product_services.category_id', $request->category);
+                }
+                if (!empty($request->item_type))
+                {
+                    $fallbackQuery = $fallbackQuery->where('product_services.type', $request->item_type);
+                }
+                $productServices = $fallbackQuery->with(['categorys', 'units'])->get();
+
+                try {
+                    $allTaxes = Tax::pluck('name', 'id')->toArray();
+                    foreach ($productServices as $ps) {
+                        if (!empty($ps->tax_id)) {
+                            $taxIds = explode(',', $ps->tax_id);
+                            $tNames = [];
+                            foreach ($taxIds as $tid) {
+                                if (isset($allTaxes[trim($tid)])) {
+                                    $tNames[] = $allTaxes[trim($tid)];
+                                }
+                            }
+                            $ps->tax_names = implode(',', $tNames);
+                        } else {
+                            $ps->tax_names = '';
+                        }
+                    }
+                } catch (\Throwable $ex) {
+                    foreach ($productServices as $ps) {
+                        $ps->tax_names = '';
+                    }
+                }
             }
-            if (!empty($request->item_type))
-            {
-                $productServices = $productServices->where('product_services.type', $request->item_type);
-            }
-                $productServices = $productServices->with(['categorys', 'units'])->get();
 
             // Sinkronisasi otomatis stok master barang dengan stok fisik Gudang Pusat (MBG / Multi-Warehouse)
-            $workspace = getActiveWorkSpace();
-            $pusatWarehouse = Warehouse::where('workspace', $workspace)
-                ->where(function($q) {
-                    $q->where('name', 'like', '%Pusat%')
-                      ->orWhere('name', 'like', '%Koperasi%');
-                })->first() ?? Warehouse::where('workspace', $workspace)->first();
+            try {
+                $workspace = getActiveWorkSpace();
+                $pusatWarehouse = Warehouse::where('workspace', $workspace)
+                    ->where(function($q) {
+                        $q->where('name', 'like', '%Pusat%')
+                          ->orWhere('name', 'like', '%Koperasi%');
+                    })->first() ?? Warehouse::where('workspace', $workspace)->first();
 
-            if ($pusatWarehouse) {
-                $pusatStocks = WarehouseProduct::where('warehouse_id', $pusatWarehouse->id)
-                    ->pluck('quantity', 'product_id')
-                    ->toArray();
+                if ($pusatWarehouse) {
+                    $pusatStocks = WarehouseProduct::where('warehouse_id', $pusatWarehouse->id)
+                        ->pluck('quantity', 'product_id')
+                        ->toArray();
 
-                $warehouseProductIds = WarehouseProduct::where('workspace', $workspace)
-                    ->distinct()
-                    ->pluck('product_id')
-                    ->toArray();
+                    $warehouseProductIds = WarehouseProduct::where('workspace', $workspace)
+                        ->distinct()
+                        ->pluck('product_id')
+                        ->toArray();
 
-                foreach ($productServices as $ps) {
-                    if (in_array($ps->id, $warehouseProductIds)) {
-                        $actualQty = isset($pusatStocks[$ps->id]) ? (float) $pusatStocks[$ps->id] : 0;
-                        if ((float) $ps->quantity != $actualQty) {
-                            $ps->quantity = $actualQty;
-                            ProductService::where('id', $ps->id)->update(['quantity' => $actualQty]);
+                    foreach ($productServices as $ps) {
+                        if (in_array($ps->id, $warehouseProductIds)) {
+                            $actualQty = isset($pusatStocks[$ps->id]) ? (float) $pusatStocks[$ps->id] : 0;
+                            if ((float) $ps->quantity != $actualQty) {
+                                $ps->quantity = $actualQty;
+                                ProductService::where('id', $ps->id)->update(['quantity' => $actualQty]);
+                            }
                         }
                     }
                 }
+            } catch (\Throwable $e) {
+                \Log::warning('Stock auto-sync warning: ' . $e->getMessage());
             }
 
             return view('productservice::grid',compact('productServices', 'category','product_type'));
