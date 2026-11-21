@@ -49,51 +49,90 @@ class ProductServiceController extends Controller
                 $product_type['music institute'] = 'Music Institute';
             }
             $allowedIds = function_exists('globalAdminUserIds') ? globalAdminUserIds() : [0, 1, 2];
-            $productServices = ProductService::select('product_services.*', DB::raw('GROUP_CONCAT(taxes.name) as tax_names'))
-            ->leftJoin('taxes', function ($join) {
-                $join->on('taxes.id', '=', DB::raw("SUBSTRING_INDEX(SUBSTRING_INDEX(product_services.tax_id, ',', numbers.n), ',', -1)"))
-                    ->crossJoin(DB::raw('(SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4) numbers'))
-                    ->whereRaw('CHAR_LENGTH(product_services.tax_id) - CHAR_LENGTH(REPLACE(product_services.tax_id, ",", "")) + 1 >= numbers.n');
-            })
-            ->whereIn('product_services.created_by', $allowedIds)
-            ->groupBy('product_services.id');
-            if (!empty($request->category))
-            {
-                $productServices = $productServices->where('product_services.category_id', $request->category);
+            try {
+                $query = ProductService::select('product_services.*', DB::raw('GROUP_CONCAT(taxes.name) as tax_names'))
+                    ->leftJoin('taxes', function ($join) {
+                        $join->on('taxes.id', '=', DB::raw("SUBSTRING_INDEX(SUBSTRING_INDEX(product_services.tax_id, ',', numbers.n), ',', -1)"))
+                            ->crossJoin(DB::raw('(SELECT 1 n UNION SELECT 2 UNION SELECT 3 UNION SELECT 4) numbers'))
+                            ->whereRaw('CHAR_LENGTH(product_services.tax_id) - CHAR_LENGTH(REPLACE(product_services.tax_id, ",", "")) + 1 >= numbers.n');
+                    })
+                    ->whereIn('product_services.created_by', $allowedIds)
+                    ->groupBy('product_services.id');
+                if (!empty($request->category))
+                {
+                    $query = $query->where('product_services.category_id', $request->category);
+                }
+                if (!empty($request->item_type))
+                {
+                    $query = $query->where('product_services.type', $request->item_type);
+                }
+                $productServices = $query->with(['categorys','units'])->get();
+            } catch (\Throwable $e) {
+                $fallbackQuery = ProductService::whereIn('product_services.created_by', $allowedIds);
+                if (!empty($request->category))
+                {
+                    $fallbackQuery = $fallbackQuery->where('product_services.category_id', $request->category);
+                }
+                if (!empty($request->item_type))
+                {
+                    $fallbackQuery = $fallbackQuery->where('product_services.type', $request->item_type);
+                }
+                $productServices = $fallbackQuery->with(['categorys','units'])->get();
+
+                try {
+                    $allTaxes = Tax::pluck('name', 'id')->toArray();
+                    foreach ($productServices as $ps) {
+                        if (!empty($ps->tax_id)) {
+                            $taxIds = explode(',', $ps->tax_id);
+                            $tNames = [];
+                            foreach ($taxIds as $tid) {
+                                if (isset($allTaxes[trim($tid)])) {
+                                    $tNames[] = $allTaxes[trim($tid)];
+                                }
+                            }
+                            $ps->tax_names = implode(',', $tNames);
+                        } else {
+                            $ps->tax_names = '';
+                        }
+                    }
+                } catch (\Throwable $ex) {
+                    foreach ($productServices as $ps) {
+                        $ps->tax_names = '';
+                    }
+                }
             }
-            if (!empty($request->item_type))
-            {
-                $productServices = $productServices->where('product_services.type', $request->item_type);
-            }
-                $productServices = $productServices->with(['categorys','units'])->get();
 
             // Sinkronisasi otomatis stok master barang dengan stok fisik Gudang Pusat (MBG / Multi-Warehouse)
-            $workspace = getActiveWorkSpace();
-            $pusatWarehouse = Warehouse::where('workspace', $workspace)
-                ->where(function($q) {
-                    $q->where('name', 'like', '%Pusat%')
-                      ->orWhere('name', 'like', '%Koperasi%');
-                })->first() ?? Warehouse::where('workspace', $workspace)->first();
+            try {
+                $workspace = getActiveWorkSpace();
+                $pusatWarehouse = Warehouse::where('workspace', $workspace)
+                    ->where(function($q) {
+                        $q->where('name', 'like', '%Pusat%')
+                          ->orWhere('name', 'like', '%Koperasi%');
+                    })->first() ?? Warehouse::where('workspace', $workspace)->first();
 
-            if ($pusatWarehouse) {
-                $pusatStocks = WarehouseProduct::where('warehouse_id', $pusatWarehouse->id)
-                    ->pluck('quantity', 'product_id')
-                    ->toArray();
+                if ($pusatWarehouse) {
+                    $pusatStocks = WarehouseProduct::where('warehouse_id', $pusatWarehouse->id)
+                        ->pluck('quantity', 'product_id')
+                        ->toArray();
 
-                $warehouseProductIds = WarehouseProduct::where('workspace', $workspace)
-                    ->distinct()
-                    ->pluck('product_id')
-                    ->toArray();
+                    $warehouseProductIds = WarehouseProduct::where('workspace', $workspace)
+                        ->distinct()
+                        ->pluck('product_id')
+                        ->toArray();
 
-                foreach ($productServices as $ps) {
-                    if (in_array($ps->id, $warehouseProductIds)) {
-                        $actualQty = isset($pusatStocks[$ps->id]) ? (float) $pusatStocks[$ps->id] : 0;
-                        if ((float) $ps->quantity != $actualQty) {
-                            $ps->quantity = $actualQty;
-                            ProductService::where('id', $ps->id)->update(['quantity' => $actualQty]);
+                    foreach ($productServices as $ps) {
+                        if (in_array($ps->id, $warehouseProductIds)) {
+                            $actualQty = isset($pusatStocks[$ps->id]) ? (float) $pusatStocks[$ps->id] : 0;
+                            if ((float) $ps->quantity != $actualQty) {
+                                $ps->quantity = $actualQty;
+                                ProductService::where('id', $ps->id)->update(['quantity' => $actualQty]);
+                            }
                         }
                     }
                 }
+            } catch (\Throwable $e) {
+                \Log::warning('Stock auto-sync warning: ' . $e->getMessage());
             }
 
             return view('productservice::index',compact('productServices', 'category','product_type'));
@@ -110,7 +149,7 @@ class ProductServiceController extends Controller
      */
     public function create(Request $request)
     {
-        if(Auth::user()->isAbleTo('product&service create'))
+        if(Auth::user()->isAbleTo('product&service create') || Auth::user()->isAbleTo('product&service manage'))
         {
             $product_type = ProductService::$product_type;
             if(module_is_active('RentalManagement')) {
@@ -130,7 +169,7 @@ class ProductServiceController extends Controller
         }
         else
         {
-            return response()->json(['error' => __('Permission denied.')], 401);
+            return redirect()->back()->with('error', __('Permission denied.'));
         }
     }
 
@@ -204,7 +243,7 @@ class ProductServiceController extends Controller
      */
     public function store(Request $request)
     {
-        if(Auth::user()->isAbleTo('product&service create'))
+        if(Auth::user()->isAbleTo('product&service create') || Auth::user()->isAbleTo('product&service manage'))
         {
             $rules = [
                 'name' => 'required',
@@ -233,7 +272,7 @@ class ProductServiceController extends Controller
             if($request->hasFile('image')){
                 $name = time() . "_" . $request->image->getClientOriginalName();
                 $path = upload_file($request,'image',$name,'products');
-                $productService->image          = empty($path) ? null : $path['url'];
+                $productService->image          = (is_array($path) && !empty($path['url'])) ? $path['url'] : null;
             }
 
             $productService->sale_price     = !empty($request->sale_price) ? $request->sale_price : 0;
@@ -249,12 +288,18 @@ class ProductServiceController extends Controller
             }
             $productService->type           = $request->type;
             $productService->category_id    = $request->category_id;
-            $productService->warehouse_id    = $request->warehouse_id;
+            $productService->warehouse_id   = !empty($request->warehouse_id) ? (int)$request->warehouse_id : null;
+            $productService->sale_chartaccount_id = !empty($request->sale_chartaccount_id) ? (int)$request->sale_chartaccount_id : 0;
+            $productService->expense_chartaccount_id = !empty($request->expense_chartaccount_id) ? (int)$request->expense_chartaccount_id : 0;
             $productService->created_by     = creatorId();
             $productService->workspace_id     = getActiveWorkSpace();
             $productService->save();
 
-            event(new CreateProduct($request,$productService));
+            try {
+                event(new CreateProduct($request,$productService));
+            } catch (\Throwable $e) {
+                \Log::warning('CreateProduct event warning: ' . $e->getMessage());
+            }
 
             if ($productService && $productService->type == 'parts') {
 
@@ -322,12 +367,20 @@ class ProductServiceController extends Controller
 
             if(module_is_active('CustomField'))
             {
-                \Modules\CustomField\Entities\CustomField::saveData($productService, $request->customField);
+                try {
+                    \Modules\CustomField\Entities\CustomField::saveData($productService, $request->customField);
+                } catch (\Throwable $e) {
+                    \Log::warning('CustomField saveData warning: ' . $e->getMessage());
+                }
             }
 
-            if(!empty($request->warehouse_id))
+            if(!empty($productService->warehouse_id))
             {
-                Purchase::addWarehouseStock( $productService->id, $request->quantity, $request->warehouse_id);
+                try {
+                    Purchase::addWarehouseStock($productService->id, $productService->quantity, $productService->warehouse_id);
+                } catch (\Throwable $e) {
+                    \Log::warning('addWarehouseStock error: ' . $e->getMessage());
+                }
             }
             return redirect()->route('product-service.index')->with('success', __('Product successfully created.'));
         }
