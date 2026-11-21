@@ -376,11 +376,14 @@ class MbgController extends Controller
             // 1. Process Standard Used Items (Deduct from SPPG Warehouse stock)
             if (!empty($request->standard_products)) {
                 foreach ($request->standard_products as $item) {
-                    if (empty($item['quantity']) || $item['quantity'] <= 0) continue;
+                    if (empty($item['product_id']) || empty($item['quantity']) || $item['quantity'] <= 0) continue;
 
                     $qty = (float) $item['quantity'];
+                    $prod = ProductService::find($item['product_id']);
                     $usage->items()->create([
                         'product_id' => $item['product_id'],
+                        'product_name' => $prod ? $prod->name : null,
+                        'unit_name' => ($prod && $prod->unit) ? $prod->unit->name : 'Unit',
                         'quantity' => $qty,
                         'type' => 'standard',
                         'additional_cost' => 0,
@@ -399,16 +402,36 @@ class MbgController extends Controller
                 }
             }
 
-            // 2. Process Additional / Emergency Items
+            // 2. Process Additional / Emergency Items (Bahan Koperasi maupun Produk Luar Non-Database)
             if (!empty($request->additional_products)) {
                 foreach ($request->additional_products as $item) {
                     if (empty($item['quantity']) || $item['quantity'] <= 0) continue;
+
+                    $productId = !empty($item['product_id']) ? $item['product_id'] : null;
+                    $productName = !empty($item['product_name']) ? trim($item['product_name']) : null;
+                    $unitName = !empty($item['unit_name']) ? trim($item['unit_name']) : null;
+
+                    // Must have either product_id or product_name
+                    if (!$productId && !$productName) {
+                        continue;
+                    }
+
+                    // If from cooperative database, populate fallback name & unit
+                    if ($productId && (!$productName || !$unitName)) {
+                        $prod = ProductService::find($productId);
+                        if ($prod) {
+                            $productName = $productName ?: $prod->name;
+                            $unitName = $unitName ?: (($prod->unit) ? $prod->unit->name : 'Unit');
+                        }
+                    }
 
                     $qty = (float) $item['quantity'];
                     $cost = isset($item['additional_cost']) ? (float) $item['additional_cost'] : 0;
 
                     $usage->items()->create([
-                        'product_id' => $item['product_id'],
+                        'product_id' => $productId,
+                        'product_name' => $productName,
+                        'unit_name' => $unitName ?: 'Unit',
                         'quantity' => $qty,
                         'type' => 'additional',
                         'additional_cost' => $cost,

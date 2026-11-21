@@ -70,7 +70,9 @@ return new class extends Migration
             Schema::create('mbg_kitchen_usage_items', function (Blueprint $table) {
                 $table->id();
                 $table->unsignedBigInteger('usage_id');
-                $table->unsignedBigInteger('product_id');
+                $table->unsignedBigInteger('product_id')->nullable();
+                $table->string('product_name')->nullable();
+                $table->string('unit_name', 50)->nullable();
                 $table->decimal('quantity', 10, 2)->default(0);
                 $table->string('type')->default('standard'); // standard (dipakai), additional (barang tambahan)
                 $table->decimal('additional_cost', 15, 2)->default(0);

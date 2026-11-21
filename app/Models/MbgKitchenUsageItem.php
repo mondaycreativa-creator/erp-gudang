@@ -15,11 +15,29 @@ class MbgKitchenUsageItem extends Model
     protected $fillable = [
         'usage_id',
         'product_id',
+        'product_name',
+        'unit_name',
         'quantity',
         'type', // 'standard' or 'additional'
         'additional_cost',
         'notes',
     ];
+
+    public function getDisplayNameAttribute()
+    {
+        if ($this->product) {
+            return $this->product->name;
+        }
+        return $this->product_name ?: '-';
+    }
+
+    public function getDisplayUnitAttribute()
+    {
+        if ($this->product && $this->product->unit) {
+            return $this->product->unit->name;
+        }
+        return $this->unit_name ?: 'Satuan';
+    }
 
     public function usage()
     {

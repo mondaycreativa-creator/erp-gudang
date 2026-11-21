@@ -123,9 +123,16 @@
                         @foreach($usage->additionalItems as $idx => $item)
                             <tr>
                                 <td>{{ $idx + 1 }}</td>
-                                <td><strong>{{ $item->product ? $item->product->name : '-' }}</strong></td>
+                                <td>
+                                    <strong>{{ $item->product ? $item->product->name : ($item->product_name ?? '-') }}</strong>
+                                    @if(!$item->product_id)
+                                        <span class="badge bg-light text-primary border ms-1" style="font-size: 0.72rem;">
+                                            <i class="ti ti-tag me-1"></i>Non-Koperasi
+                                        </span>
+                                    @endif
+                                </td>
                                 <td class="text-center fw-bold">
-                                    {{ $item->quantity }} {{ $item->product && $item->product->unit ? $item->product->unit->name : '' }}
+                                    {{ $item->quantity }} {{ $item->product && $item->product->unit ? $item->product->unit->name : ($item->unit_name ?? 'Unit') }}
                                 </td>
                                 <td class="text-end fw-bold text-danger">Rp {{ number_format($item->additional_cost, 0, ',', '.') }}</td>
                                 <td class="text-muted small">{{ $item->notes ?? '-' }}</td>
