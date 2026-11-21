@@ -515,7 +515,16 @@ if (!function_exists('isAdminDapur')) {
             return false;
         }
         $type = strtolower($user->type ?? '');
-        if (str_contains($type, 'sppg') || str_contains($type, 'dapur') || str_contains($type, 'asisten lapangan') || str_contains($type, 'aslap')) {
+        $name = strtolower($user->name ?? '');
+        $email = strtolower($user->email ?? '');
+
+        // Check user type, name, and email for SPPG / Dapur keywords
+        if (
+            str_contains($type, 'sppg') || str_contains($type, 'dapur') || str_contains($type, 'asisten lapangan') || str_contains($type, 'aslap') ||
+            str_contains($name, 'sppg') || str_contains($name, 'dapur') ||
+            str_contains($email, 'sppg') || str_contains($email, 'dapur') ||
+            str_contains($email, 'pelutan') || str_contains($email, 'kerep')
+        ) {
             return true;
         }
         if (method_exists($user, 'roles')) {
@@ -540,13 +549,21 @@ if (!function_exists('isAslap')) {
             return false;
         }
         $type = strtolower($user->type ?? '');
-        if (str_contains($type, 'aslap') || str_contains($type, 'asisten lapangan')) {
+        $name = strtolower($user->name ?? '');
+        $email = strtolower($user->email ?? '');
+
+        // Check user type, name, and email for Aslap / Asisten Lapangan keywords
+        if (
+            str_contains($type, 'aslap') || str_contains($type, 'asisten lapangan') || str_contains($type, 'lapangan') ||
+            str_contains($name, 'aslap') || str_contains($name, 'asisten lapangan') || str_contains($name, 'lapangan') ||
+            str_contains($email, 'aslap') || str_contains($email, 'lapangan')
+        ) {
             return true;
         }
         if (method_exists($user, 'roles')) {
             foreach ($user->roles as $role) {
                 $rName = strtolower($role->name ?? '');
-                if (str_contains($rName, 'aslap') || str_contains($rName, 'asisten lapangan')) {
+                if (str_contains($rName, 'aslap') || str_contains($rName, 'asisten lapangan') || str_contains($rName, 'lapangan')) {
                     return true;
                 }
             }
@@ -569,8 +586,19 @@ if (!function_exists('canManagePrices')) {
             return false;
         }
         $type = strtolower($user->type ?? '');
+        $name = strtolower($user->name ?? '');
+        if (
+            str_contains($name, 'sppg') || str_contains($name, 'dapur') ||
+            str_contains($name, 'aslap') || str_contains($name, 'asisten lapangan') || str_contains($name, 'lapangan') ||
+            str_contains($name, 'pelutan') || str_contains($name, 'kerep')
+        ) {
+            return false;
+        }
         // Super admin, company, and Admin Koperasi CAN manage & view prices!
-        if (in_array($user->type, ['super admin', 'company', 'Admin Koperasi']) || str_contains($type, 'koperasi') || str_contains($type, 'super admin') || str_contains($type, 'company')) {
+        if (in_array($user->type, ['super admin', 'company', 'Admin Koperasi']) || str_contains($type, 'koperasi') || str_contains($type, 'super admin')) {
+            return true;
+        }
+        if (str_contains($type, 'company') && !isAdminDapur($user) && !isAslap($user)) {
             return true;
         }
         return false;
@@ -580,6 +608,15 @@ if (!function_exists('canManagePrices')) {
 if (!function_exists('canViewFinancialCards')) {
     function canViewFinancialCards($user = null)
     {
+        if (!$user) {
+            $user = \Auth::user();
+        }
+        if (!$user) {
+            return false;
+        }
+        if (isAdminDapur($user) || (function_exists('isAslap') && isAslap($user))) {
+            return false;
+        }
         return function_exists('canManagePrices') ? canManagePrices($user) : false;
     }
 }

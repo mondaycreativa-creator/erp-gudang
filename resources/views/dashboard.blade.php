@@ -10,7 +10,7 @@
 
 @section('page-action')
     <div class="d-flex flex-wrap align-items-center gap-2">
-        @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
+        @if(!isAdminDapur() && !isAslap() && (function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi')))
             <a href="{{ route('purchases.create', 0) }}" class="btn btn-sm btn-primary">
                 <i class="ti ti-shopping-cart-plus me-1"></i> {{ __('+ Barang Masuk (Pusat)') }}
             </a>
@@ -316,7 +316,7 @@
 @section('content')
 <div class="row">
     <!-- KPI Summary Cards (Dynamic) - Keuangan: Disembunyikan untuk Admin Dapur & Aslap -->
-    @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
+    @if(!isAdminDapur() && !isAslap() && (function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi')))
     <div class="col-xl-3 col-md-6 col-12 mb-3">
         <div class="card bg-primary text-white mb-0 h-100">
             <div class="card-body">
@@ -413,7 +413,7 @@
                                     </th>
                                 @endforeach
                                 <th style="width: 11%;" class="text-center">{{ __('Total Stok') }}</th>
-                                @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
+                                @if(!isAdminDapur() && !isAslap() && (function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi')))
                                     <th style="width: 13%;" class="text-end">{{ __('Nilai Aset') }}</th>
                                 @endif
                             </tr>
@@ -448,7 +448,7 @@
                                             <span class="badge bg-success px-2 py-1" style="font-size: 0.74rem;">{{ number_format($item->total_stock, 1, ',', '.') }}</span>
                                         @endif
                                     </td>
-                                    @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
+                                    @if(!isAdminDapur() && !isAslap() && (function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi')))
                                         <td class="text-end fw-bold text-dark py-2 text-nowrap" style="font-size: 0.82rem;">
                                             Rp {{ number_format($item->total_asset, 0, ',', '.') }}
                                         </td>
@@ -456,7 +456,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ ((function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi')) ? 4 : 3) + count($sppgWarehouses) }}" class="text-center py-4 text-muted">Belum ada data bahan makanan terdaftar.</td>
+                                    <td colspan="{{ ((!isAdminDapur() && !isAslap() && (function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))) ? 4 : 3) + count($sppgWarehouses) }}" class="text-center py-4 text-muted">Belum ada data bahan makanan terdaftar.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -491,7 +491,7 @@
                                 <th style="width: 28%;">{{ __('No. Surat Jalan') }}</th>
                                 <th style="width: 30%;">{{ __('Tujuan SPPG') }}</th>
                                 <th class="text-center" style="width: 20%;">{{ __('Tanggal') }}</th>
-                                @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
+                                @if(!isAdminDapur() && !isAslap() && (function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi')))
                                     <th class="text-end" style="width: 22%;">{{ __('Nilai Transfer') }}</th>
                                 @else
                                     <th class="text-end" style="width: 22%;">{{ __('Status') }}</th>
@@ -515,7 +515,7 @@
                                     <td class="text-center text-muted small text-nowrap">
                                         <i class="ti ti-calendar me-1 opacity-75"></i>{{ \Carbon\Carbon::parse($disp->delivery_date)->format('d M Y') }}
                                     </td>
-                                    @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
+                                    @if(!isAdminDapur() && !isAslap() && (function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi')))
                                         <td class="text-end fw-bold text-dark text-nowrap">
                                             Rp {{ number_format($disp->total_cost, 0, ',', '.') }}
                                         </td>
@@ -545,7 +545,7 @@
                                 <span class="fw-bold text-primary code-pill">
                                     <i class="ti ti-file-text me-1"></i>{{ $disp->dispatch_code }}
                                 </span>
-                                @if(function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi'))
+                                @if(!isAdminDapur() && !isAslap() && (function_exists('canManagePrices') ? canManagePrices() : (Auth::user()->type == 'super admin' || Auth::user()->type == 'company' || Auth::user()->type == 'Admin Koperasi')))
                                     <span class="fw-bold text-dark fs-6">
                                         Rp {{ number_format($disp->total_cost, 0, ',', '.') }}
                                     </span>

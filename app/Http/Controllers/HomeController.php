@@ -49,10 +49,11 @@ class HomeController extends Controller
         {
             $user = auth()->user();
 
-            // Eliminate super admin role: ensure user always operates as company with active workspace
-            if ($user->type === 'super admin' || empty($user->active_workspace) || $user->active_workspace == 0) {
-                $workspace = \App\Models\WorkSpace::first();
-                $workspaceId = $workspace ? $workspace->id : 1;
+            // Eliminate super admin role: ensure user operates with active workspace
+            $workspace = \App\Models\WorkSpace::first();
+            $workspaceId = $workspace ? $workspace->id : 1;
+
+            if ($user->type === 'super admin') {
                 $user->type = 'company';
                 $user->active_workspace = $workspaceId;
                 $user->workspace_id = $workspaceId;
@@ -63,6 +64,20 @@ class HomeController extends Controller
                     $user->roles()->syncWithoutDetaching([$companyRole->id]);
                 }
                 \Illuminate\Support\Facades\Cache::forget('sidebar_menu_' . $user->id);
+            } elseif (empty($user->active_workspace) || $user->active_workspace == 0) {
+                $user->active_workspace = $workspaceId;
+                $user->workspace_id = $workspaceId;
+                $user->save();
+            }
+
+            // Restore operational user type if previously altered to company
+            if ($user->type === 'company' && function_exists('isAdminDapur') && (isAdminDapur($user) || isAslap($user))) {
+                $operationalRole = $user->roles()->where('name', '!=', 'company')->first();
+                if ($operationalRole) {
+                    $user->type = $operationalRole->name;
+                    $user->save();
+                    \Illuminate\Support\Facades\Cache::forget('sidebar_menu_' . $user->id);
+                }
             }
 
             $workspace = getActiveWorkSpace();
