@@ -27,14 +27,21 @@ class ProductCreate
      */
     public function handle(CreateProduct $event)
     {
+        $request = ($event->request instanceof \Illuminate\Http\Request) ? $event->request : (($event->productService instanceof \Illuminate\Http\Request) ? $event->productService : null);
+        $productModel = ($event->productService instanceof ProductService) ? $event->productService : (($event->request instanceof ProductService) ? $event->request : null);
 
-        $product_Services = $event->productService;
-        $productServices = ProductService::where('id',$event->request->id)->first();
-        if(!empty($productServices))
-        {
-            $productServices->sale_chartaccount_id = $product_Services['sale_chartaccount_id'];
-            $productServices->expense_chartaccount_id = $product_Services['expense_chartaccount_id'];
-            $productServices->save();
+        if (!$productModel && $request && !empty($request->id)) {
+            $productModel = ProductService::find($request->id);
+        }
+
+        if ($productModel) {
+            $saleId = ($request && !empty($request->sale_chartaccount_id)) ? (int)$request->sale_chartaccount_id : (!empty($productModel->sale_chartaccount_id) ? (int)$productModel->sale_chartaccount_id : 0);
+            $expenseId = ($request && !empty($request->expense_chartaccount_id)) ? (int)$request->expense_chartaccount_id : (!empty($productModel->expense_chartaccount_id) ? (int)$productModel->expense_chartaccount_id : 0);
+
+            ProductService::where('id', $productModel->id)->update([
+                'sale_chartaccount_id' => $saleId,
+                'expense_chartaccount_id' => $expenseId,
+            ]);
         }
     }
 }

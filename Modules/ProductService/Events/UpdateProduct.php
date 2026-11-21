@@ -15,9 +15,17 @@ class UpdateProduct
      */
     public $request;
     public $productService;
-    public function __construct($request,$productService)
+    public function __construct($arg1 = null, $arg2 = null)
     {
-        $this->request = $request;
-        $this->productService = $productService;
+        if ($arg1 instanceof \Illuminate\Http\Request) {
+            $this->request = $arg1;
+            $this->productService = $arg2;
+        } elseif ($arg2 instanceof \Illuminate\Http\Request) {
+            $this->request = $arg2;
+            $this->productService = $arg1;
+        } else {
+            $this->request = $arg1;
+            $this->productService = $arg2;
+        }
     }
 }

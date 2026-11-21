@@ -27,15 +27,24 @@ class ProductUpdate
      */
     public function handle(UpdateProduct $event)
     {
+        $request = ($event->request instanceof \Illuminate\Http\Request) ? $event->request : (($event->productService instanceof \Illuminate\Http\Request) ? $event->productService : null);
+        $productModel = ($event->productService instanceof ProductService) ? $event->productService : (($event->request instanceof ProductService) ? $event->request : null);
 
-        $product_Services = $event->productService;
-        $productServices = ProductService::where('id',$event->request->id)->first();
-        if(!empty($productServices))
-        {
+        if (!$productModel && $request && !empty($request->id)) {
+            $productModel = ProductService::find($request->id);
+        }
 
-            $productServices->sale_chartaccount_id = $product_Services['sale_chartaccount_id'];
-            $productServices->expense_chartaccount_id = $product_Services['expense_chartaccount_id'];
-            $productServices->update();
+        if ($productModel) {
+            $updateData = [];
+            if ($request && isset($request->sale_chartaccount_id)) {
+                $updateData['sale_chartaccount_id'] = !empty($request->sale_chartaccount_id) ? (int)$request->sale_chartaccount_id : 0;
+            }
+            if ($request && isset($request->expense_chartaccount_id)) {
+                $updateData['expense_chartaccount_id'] = !empty($request->expense_chartaccount_id) ? (int)$request->expense_chartaccount_id : 0;
+            }
+            if (!empty($updateData)) {
+                ProductService::where('id', $productModel->id)->update($updateData);
+            }
         }
     }
 }
