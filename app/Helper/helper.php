@@ -609,6 +609,24 @@ if (!function_exists('terbilang')) {
     }
 }
 
+if (!function_exists('getPusatWarehouse')) {
+    function getPusatWarehouse($workspace = null)
+    {
+        $workspace = $workspace ?: getActiveWorkSpace();
+        return \App\Models\Warehouse::where('workspace', $workspace)
+            ->where('name', 'like', '%Pusat%')
+            ->orderBy('id', 'asc')
+            ->first()
+            ?? \App\Models\Warehouse::where('workspace', $workspace)
+                ->where('name', 'like', '%Koperasi%')
+                ->orderBy('id', 'asc')
+                ->first()
+            ?? \App\Models\Warehouse::where('workspace', $workspace)
+                ->orderBy('id', 'asc')
+                ->first();
+    }
+}
+
 if (!function_exists('isAdminDapur')) {
     function isAdminDapur($user = null)
     {

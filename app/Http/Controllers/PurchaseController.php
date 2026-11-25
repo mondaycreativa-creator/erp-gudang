@@ -200,7 +200,11 @@ class PurchaseController extends Controller
 
                     //Warehouse Stock Report
                     if (isset($products[$i]['item'])) {
-                        Purchase::addWarehouseStock($products[$i]['item'], $products[$i]['quantity'], $request->warehouse_id);
+                        $whProduct = Purchase::addWarehouseStock($products[$i]['item'], $products[$i]['quantity'], $request->warehouse_id);
+                        $pusat = function_exists('getPusatWarehouse') ? getPusatWarehouse(getActiveWorkSpace()) : null;
+                        if ($pusat && (int) $request->warehouse_id === (int) $pusat->id && $whProduct) {
+                            ProductService::where('id', $products[$i]['item'])->update(['quantity' => (float) $whProduct->quantity]);
+                        }
                     }
                 }
 
@@ -286,7 +290,11 @@ class PurchaseController extends Controller
 
                     //Warehouse Stock Report
                     if (isset($products[$i]['item'])) {
-                        Purchase::addWarehouseStock($products[$i]['item'], $products[$i]['quantity'], $request->warehouse_id);
+                        $whProduct = Purchase::addWarehouseStock($products[$i]['item'], $products[$i]['quantity'], $request->warehouse_id);
+                        $pusat = function_exists('getPusatWarehouse') ? getPusatWarehouse(getActiveWorkSpace()) : null;
+                        if ($pusat && (int) $request->warehouse_id === (int) $pusat->id && $whProduct) {
+                            ProductService::where('id', $products[$i]['item'])->update(['quantity' => (float) $whProduct->quantity]);
+                        }
                     }
                 }
                 return redirect()->route('purchases.index', $purchase->id)->with('success', __('Purchase successfully created.'));
@@ -372,7 +380,11 @@ class PurchaseController extends Controller
 
                     //Warehouse Stock Report
                     if (isset($products[$i]['item'])) {
-                        Purchase::addWarehouseStock($products[$i]['item'], $products[$i]['quantity'], $request->warehouse_id);
+                        $whProduct = Purchase::addWarehouseStock($products[$i]['item'], $products[$i]['quantity'], $request->warehouse_id);
+                        $pusat = function_exists('getPusatWarehouse') ? getPusatWarehouse(getActiveWorkSpace()) : null;
+                        if ($pusat && (int) $request->warehouse_id === (int) $pusat->id && $whProduct) {
+                            ProductService::where('id', $products[$i]['item'])->update(['quantity' => (float) $whProduct->quantity]);
+                        }
                     }
                 }
                 return redirect()->route('purchases.index', $purchase->id)->with('success', __('Purchase successfully created.'));
@@ -571,8 +583,11 @@ class PurchaseController extends Controller
                     $new_qty = $purchaseProduct->quantity;
                     $total_qty = $new_qty - $old_qty;
                     if (isset($products[$i]['item'])) {
-
-                        Purchase::addWarehouseStock($products[$i]['item'], $total_qty, $request->warehouse_id);
+                        $whProduct = Purchase::addWarehouseStock($products[$i]['item'], $total_qty, $request->warehouse_id);
+                        $pusat = function_exists('getPusatWarehouse') ? getPusatWarehouse(getActiveWorkSpace()) : null;
+                        if ($pusat && (int) $request->warehouse_id === (int) $pusat->id && $whProduct) {
+                            ProductService::where('id', $products[$i]['item'])->update(['quantity' => (float) $whProduct->quantity]);
+                        }
                     }
                     event(new UpdatePurchase($request, $purchase));
                 }
@@ -603,19 +618,35 @@ class PurchaseController extends Controller
                     $purchase_payment->delete();
                 }
                 foreach ($purchase_products as $purchase_product) {
-                    $warehouse_qty = WarehouseProduct::where('warehouse_id', $purchase->warehouse_id)->where('product_id', $purchase_product->product_id)->first();
+                    $warehouse_rows = WarehouseProduct::where('warehouse_id', $purchase->warehouse_id)
+                        ->where('product_id', $purchase_product->product_id)
+                        ->orderByDesc('updated_at')
+                        ->orderByDesc('id')
+                        ->get();
+                    $warehouse_qty = $warehouse_rows->first();
+                    $remaining_wh_qty = 0;
                     if (!empty($warehouse_qty)) {
-                        $warehouse_qty->quantity = $warehouse_qty->quantity - $purchase_product->quantity;
+                        foreach ($warehouse_rows->slice(1) as $duplicate) {
+                            $duplicate->delete();
+                        }
+                        $warehouse_qty->quantity = (float) $warehouse_qty->quantity - (float) $purchase_product->quantity;
 
                         if ($warehouse_qty->quantity > 0) {
                             $warehouse_qty->save();
+                            $remaining_wh_qty = (float) $warehouse_qty->quantity;
                         } else {
                             $warehouse_qty->delete();
+                            $remaining_wh_qty = 0;
                         }
                     }
                     $product_qty = \Modules\ProductService\Entities\ProductService::where('id', $purchase_product->product_id)->first();
                     if (!empty($product_qty)) {
-                        $product_qty->quantity = $product_qty->quantity - $purchase_product->quantity;
+                        $pusat = function_exists('getPusatWarehouse') ? getPusatWarehouse(getActiveWorkSpace()) : null;
+                        if ($pusat && (int) $purchase->warehouse_id === (int) $pusat->id) {
+                            $product_qty->quantity = $remaining_wh_qty;
+                        } else {
+                            $product_qty->quantity = max(0, (float) $product_qty->quantity - (float) $purchase_product->quantity);
+                        }
                         $product_qty->save();
                     }
 

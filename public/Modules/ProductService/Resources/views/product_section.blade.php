@@ -206,7 +206,7 @@
                                 <div class="col-lg-6 col-12">
                                     <div class="form-group">
                                         {{ Form::label('warehouse_id', __('Warehouse'), ['class' => 'form-label']) }}
-                                        {{ Form::select('warehouse_id', $warehouse, !empty($productService->warehouse_id)?$productService->warehouse_id:'', ['class' => 'form-control select']) }}
+                                        {{ Form::select('warehouse_id', $warehouse, !empty($productService->warehouse_id) ? $productService->warehouse_id : ($defaultWarehouseId ?? ''), ['class' => 'form-control select']) }}
                                     </div>
                                 </div>
                             </div>

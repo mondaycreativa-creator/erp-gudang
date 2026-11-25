@@ -82,9 +82,13 @@ class HomeController extends Controller
 
             $workspace = getActiveWorkSpace();
             $warehouses = Warehouse::where('workspace', $workspace)->get();
-            $pusat = $warehouses->first(function($w) {
-                return str_contains(strtolower($w->name), 'pusat') || str_contains(strtolower($w->name), 'koperasi') || $w->id == 1;
-            }) ?? $warehouses->first();
+            $pusat = function_exists('getPusatWarehouse')
+                ? getPusatWarehouse($workspace)
+                : ($warehouses->first(function($w) {
+                    return str_contains(strtolower($w->name), 'pusat');
+                }) ?? $warehouses->first(function($w) {
+                    return str_contains(strtolower($w->name), 'koperasi') || $w->id == 1;
+                }) ?? $warehouses->first());
 
             $sppgWarehouses = $warehouses->filter(function($w) use ($pusat) {
                 return $pusat ? $w->id != $pusat->id : true;
@@ -93,6 +97,8 @@ class HomeController extends Controller
             $products = ProductService::where('workspace_id', $workspace)->with(['unit', 'category'])->get();
 
             $whStocks = WarehouseProduct::whereIn('warehouse_id', $warehouses->pluck('id'))
+                ->orderByDesc('updated_at')
+                ->orderByDesc('id')
                 ->get()
                 ->groupBy('product_id');
 

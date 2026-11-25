@@ -185,20 +185,67 @@ class Purchase extends Model
     }
     public static function addWarehouseStock($product_id, $quantity, $warehouse_id)
     {
+        $workspace = getActiveWorkSpace();
+        $existingRows = WarehouseProduct::where('product_id', $product_id)
+            ->where('warehouse_id', $warehouse_id)
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->get();
 
-        $product = WarehouseProduct::where('product_id', $product_id)->where('warehouse_id', $warehouse_id)->first();
-        if ($product) {
-            $pro_quantity = $product->quantity;
-            $product_quantity = $pro_quantity + $quantity;
-        } else {
-            $product_quantity = $quantity;
+        if ($existingRows->isNotEmpty()) {
+            $target = $existingRows->first();
+            $target->quantity = max(0, (float) $target->quantity + (float) $quantity);
+            if (empty($target->workspace)) {
+                $target->workspace = $workspace;
+            }
+            $target->save();
+
+            foreach ($existingRows->slice(1) as $duplicate) {
+                $duplicate->delete();
+            }
+            return $target;
         }
 
+        return WarehouseProduct::create([
+            'warehouse_id' => $warehouse_id,
+            'product_id' => $product_id,
+            'quantity' => max(0, (float) $quantity),
+            'created_by' => \Auth::check() ? creatorId() : 0,
+            'workspace' => $workspace,
+        ]);
+    }
 
-        $data = WarehouseProduct::updateOrCreate(
-            ['warehouse_id' => $warehouse_id, 'product_id' => $product_id, 'created_by' => \Auth::user()->id, 'workspace' => getActiveWorkSpace()],
-            ['warehouse_id' => $warehouse_id, 'product_id' => $product_id, 'quantity' => $product_quantity, 'created_by' => \Auth::user()->id, 'workspace' => getActiveWorkSpace()]
-        );
+    public static function setWarehouseStock($product_id, $quantity, $warehouse_id)
+    {
+        $workspace = getActiveWorkSpace();
+        $newQuantity = max(0, (float) $quantity);
+        $existingRows = WarehouseProduct::where('product_id', $product_id)
+            ->where('warehouse_id', $warehouse_id)
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->get();
+
+        if ($existingRows->isNotEmpty()) {
+            $target = $existingRows->first();
+            $target->quantity = $newQuantity;
+            if (empty($target->workspace)) {
+                $target->workspace = $workspace;
+            }
+            $target->save();
+
+            foreach ($existingRows->slice(1) as $duplicate) {
+                $duplicate->delete();
+            }
+            return $target;
+        }
+
+        return WarehouseProduct::create([
+            'warehouse_id' => $warehouse_id,
+            'product_id' => $product_id,
+            'quantity' => $newQuantity,
+            'created_by' => \Auth::check() ? creatorId() : 0,
+            'workspace' => $workspace,
+        ]);
     }
     public static function taxs($taxes)
     {

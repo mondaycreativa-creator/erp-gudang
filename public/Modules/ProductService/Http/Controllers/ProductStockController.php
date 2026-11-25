@@ -33,14 +33,22 @@ class ProductStockController extends Controller
 
             // Sinkronisasi dengan stok fisik Gudang Pusat
             $workspace = getActiveWorkSpace();
-            $pusatWarehouse = Warehouse::where('workspace', $workspace)
-                ->where(function($q) {
-                    $q->where('name', 'like', '%Pusat%')
-                      ->orWhere('name', 'like', '%Koperasi%');
-                })->first() ?? Warehouse::where('workspace', $workspace)->first();
+            $pusatWarehouse = function_exists('getPusatWarehouse')
+                ? getPusatWarehouse($workspace)
+                : (Warehouse::where('workspace', $workspace)
+                    ->where('name', 'like', '%Pusat%')
+                    ->orderBy('id', 'asc')
+                    ->first()
+                    ?? Warehouse::where('workspace', $workspace)
+                        ->where('name', 'like', '%Koperasi%')
+                        ->orderBy('id', 'asc')
+                        ->first()
+                    ?? Warehouse::where('workspace', $workspace)->orderBy('id', 'asc')->first());
 
             if ($pusatWarehouse) {
                 $pusatStocks = WarehouseProduct::where('warehouse_id', $pusatWarehouse->id)
+                    ->orderBy('updated_at', 'asc')
+                    ->orderBy('id', 'asc')
                     ->pluck('quantity', 'product_id')
                     ->toArray();
 
@@ -108,7 +116,8 @@ class ProductStockController extends Controller
         $productService = ProductService::find($id);
         if(\Auth::user()->isAbleTo('product&service edit'))
         {
-            if($productService->created_by == creatorId())
+            $allowedIds = function_exists('globalAdminUserIds') ? globalAdminUserIds() : [creatorId()];
+            if($productService && in_array($productService->created_by, $allowedIds))
             {
                 return view('productservice::productstock.edit', compact('productService'));
             }
@@ -134,23 +143,32 @@ class ProductStockController extends Controller
         if(\Auth::user()->isAbleTo('product&service edit'))
         {
             $productService = ProductService::find($id);
-            $total = $productService->quantity + $request->quantity;
+            $allowedIds = function_exists('globalAdminUserIds') ? globalAdminUserIds() : [creatorId()];
 
-            if($productService->created_by == creatorId())
+            if($productService && in_array($productService->created_by, $allowedIds))
             {
-                $productService->quantity   = $total;
-                $productService->created_by = creatorId();
-                $productService->save();
+                $addQty = (float) $request->quantity;
 
                 // Sinkronkan ke stok fisik Gudang Pusat
-                $pusat = Warehouse::where('workspace', getActiveWorkSpace())
-                    ->where(function($q) {
-                        $q->where('name', 'like', '%Pusat%')
-                          ->orWhere('name', 'like', '%Koperasi%');
-                    })->first() ?? Warehouse::where('workspace', getActiveWorkSpace())->first();
+                $pusat = function_exists('getPusatWarehouse')
+                    ? getPusatWarehouse(getActiveWorkSpace())
+                    : (Warehouse::where('workspace', getActiveWorkSpace())
+                        ->where('name', 'like', '%Pusat%')
+                        ->orderBy('id', 'asc')
+                        ->first()
+                        ?? Warehouse::where('workspace', getActiveWorkSpace())
+                            ->where('name', 'like', '%Koperasi%')
+                            ->orderBy('id', 'asc')
+                            ->first()
+                        ?? Warehouse::where('workspace', getActiveWorkSpace())->orderBy('id', 'asc')->first());
+
                 if ($pusat) {
-                    Purchase::addWarehouseStock($productService->id, $request->quantity, $pusat->id);
+                    $whProduct = Purchase::addWarehouseStock($productService->id, $addQty, $pusat->id);
+                    $productService->quantity = $whProduct ? (float) $whProduct->quantity : max(0, (float) $productService->quantity + $addQty);
+                } else {
+                    $productService->quantity = max(0, (float) $productService->quantity + $addQty);
                 }
+                $productService->save();
 
                 //Product Stock Report
                 $type        = 'manually';

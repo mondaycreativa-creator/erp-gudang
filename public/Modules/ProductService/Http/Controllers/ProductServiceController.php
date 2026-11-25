@@ -102,44 +102,59 @@ class ProductServiceController extends Controller
                 }
             }
 
-            // Sinkronisasi otomatis stok master barang dengan stok fisik Gudang Pusat (MBG / Multi-Warehouse)
-            try {
-                $workspace = getActiveWorkSpace();
-                $pusatWarehouse = Warehouse::where('workspace', $workspace)
-                    ->where(function($q) {
-                        $q->where('name', 'like', '%Pusat%')
-                          ->orWhere('name', 'like', '%Koperasi%');
-                    })->first() ?? Warehouse::where('workspace', $workspace)->first();
-
-                if ($pusatWarehouse) {
-                    $pusatStocks = WarehouseProduct::where('warehouse_id', $pusatWarehouse->id)
-                        ->pluck('quantity', 'product_id')
-                        ->toArray();
-
-                    $warehouseProductIds = WarehouseProduct::where('workspace', $workspace)
-                        ->distinct()
-                        ->pluck('product_id')
-                        ->toArray();
-
-                    foreach ($productServices as $ps) {
-                        if (in_array($ps->id, $warehouseProductIds)) {
-                            $actualQty = isset($pusatStocks[$ps->id]) ? (float) $pusatStocks[$ps->id] : 0;
-                            if ((float) $ps->quantity != $actualQty) {
-                                $ps->quantity = $actualQty;
-                                ProductService::where('id', $ps->id)->update(['quantity' => $actualQty]);
-                            }
-                        }
-                    }
-                }
-            } catch (\Throwable $e) {
-                \Log::warning('Stock auto-sync warning: ' . $e->getMessage());
-            }
+            $this->syncWithPusatWarehouse($productServices);
 
             return view('productservice::index',compact('productServices', 'category','product_type'));
         }
         else
         {
             return redirect()->back()->with('error', __('Permission denied.'));
+        }
+    }
+
+    /**
+     * Sinkronisasi otomatis stok master barang dengan stok fisik Gudang Pusat (MBG / Multi-Warehouse).
+     */
+    private function syncWithPusatWarehouse($productServices): void
+    {
+        try {
+            $workspace = getActiveWorkSpace();
+            $pusatWarehouse = function_exists('getPusatWarehouse')
+                ? getPusatWarehouse($workspace)
+                : (Warehouse::where('workspace', $workspace)
+                    ->where('name', 'like', '%Pusat%')
+                    ->orderBy('id', 'asc')
+                    ->first()
+                    ?? Warehouse::where('workspace', $workspace)
+                        ->where('name', 'like', '%Koperasi%')
+                        ->orderBy('id', 'asc')
+                        ->first()
+                    ?? Warehouse::where('workspace', $workspace)->orderBy('id', 'asc')->first());
+
+            if ($pusatWarehouse) {
+                $pusatStocks = WarehouseProduct::where('warehouse_id', $pusatWarehouse->id)
+                    ->orderBy('updated_at', 'asc')
+                    ->orderBy('id', 'asc')
+                    ->pluck('quantity', 'product_id')
+                    ->toArray();
+
+                $warehouseProductIds = WarehouseProduct::where('workspace', $workspace)
+                    ->distinct()
+                    ->pluck('product_id')
+                    ->toArray();
+
+                foreach ($productServices as $ps) {
+                    if (in_array($ps->id, $warehouseProductIds)) {
+                        $actualQty = isset($pusatStocks[$ps->id]) ? (float) $pusatStocks[$ps->id] : 0;
+                        if ((float) $ps->quantity != $actualQty) {
+                            $ps->quantity = $actualQty;
+                            ProductService::where('id', $ps->id)->update(['quantity' => $actualQty]);
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Stock auto-sync warning: ' . $e->getMessage());
         }
     }
 
@@ -200,7 +215,9 @@ class ProductServiceController extends Controller
 
             $warehouse = Warehouse::forCompanyOrGlobal()->pluck('name', 'id');
             $warehouse->prepend('Select Warehouse', '');
-            $returnHTML = view('productservice::product_section', compact('category', 'type', 'unit', 'tax', 'warehouse','customFields','components_id','pms_id','supplier_id','workorder_id','productService','action'))->render();
+            $pusatWarehouse = function_exists('getPusatWarehouse') ? getPusatWarehouse(getActiveWorkSpace()) : null;
+            $defaultWarehouseId = $pusatWarehouse ? $pusatWarehouse->id : '';
+            $returnHTML = view('productservice::product_section', compact('category', 'type', 'unit', 'tax', 'warehouse','customFields','components_id','pms_id','supplier_id','workorder_id','productService','action','defaultWarehouseId'))->render();
             $response = [
                 'is_success' => true,
                 'message' => '',
@@ -288,7 +305,9 @@ class ProductServiceController extends Controller
             }
             $productService->type           = $request->type;
             $productService->category_id    = $request->category_id;
-            $productService->warehouse_id   = !empty($request->warehouse_id) ? (int)$request->warehouse_id : null;
+            $pusatWarehouse = function_exists('getPusatWarehouse') ? getPusatWarehouse(getActiveWorkSpace()) : null;
+            $defaultWarehouseId = ($pusatWarehouse && in_array($request->type, ['product', 'parts'])) ? (int) $pusatWarehouse->id : null;
+            $productService->warehouse_id   = !empty($request->warehouse_id) ? (int)$request->warehouse_id : $defaultWarehouseId;
             $productService->sale_chartaccount_id = !empty($request->sale_chartaccount_id) ? (int)$request->sale_chartaccount_id : 0;
             $productService->expense_chartaccount_id = !empty($request->expense_chartaccount_id) ? (int)$request->expense_chartaccount_id : 0;
             $productService->created_by     = creatorId();
@@ -477,12 +496,23 @@ class ProductServiceController extends Controller
             }
 
 
-            $old_qty = $productService->quantity;
-            $new_qty = $request->quantity;
+            $old_qty = (float) $productService->quantity;
+            $new_qty = (float) ($request->quantity ?? 0);
             $total_qty = $new_qty - $old_qty;
-            if (!empty($request->warehouse_id)) {
+            $pusatWarehouse = function_exists('getPusatWarehouse') ? getPusatWarehouse(getActiveWorkSpace()) : null;
+            $targetWarehouseId = !empty($request->warehouse_id)
+                ? (int) $request->warehouse_id
+                : (!empty($productService->warehouse_id)
+                    ? (int) $productService->warehouse_id
+                    : ($pusatWarehouse ? (int) $pusatWarehouse->id : null));
+
+            if (!empty($targetWarehouseId) && in_array($request->type, ['product', 'parts'])) {
                 try {
-                    Purchase::addWarehouseStock($productService->id, $total_qty, (int)$request->warehouse_id);
+                    if ($pusatWarehouse && $targetWarehouseId === (int) $pusatWarehouse->id) {
+                        Purchase::setWarehouseStock($productService->id, $new_qty, $targetWarehouseId);
+                    } else {
+                        Purchase::addWarehouseStock($productService->id, $total_qty, $targetWarehouseId);
+                    }
                 } catch (\Throwable $e) {
                     \Log::warning('Update addWarehouseStock warning: ' . $e->getMessage());
                 }
@@ -495,7 +525,7 @@ class ProductServiceController extends Controller
             $productService->purchase_price = isset($request->purchase_price) && $request->purchase_price !== '' ? $request->purchase_price : ($productService->purchase_price ?? 0);
             $productService->tax_id         = !empty($request->tax_id) ? implode(',', $request->tax_id) : '';
             $productService->unit_id        = $request->unit_id;
-            $productService->quantity        = $request->quantity;
+            $productService->quantity       = $new_qty;
             $productService->type           = $request->type;
             if($request->hasFile('image'))
             {
@@ -510,7 +540,7 @@ class ProductServiceController extends Controller
                 $productService->image          = (is_array($path) && !empty($path['url'])) ? $path['url'] : null;
             }
             $productService->category_id    = $request->category_id;
-            $productService->warehouse_id   = !empty($request->warehouse_id) ? (int)$request->warehouse_id : null;
+            $productService->warehouse_id   = $targetWarehouseId;
             if (isset($request->sale_chartaccount_id)) {
                 $productService->sale_chartaccount_id = !empty($request->sale_chartaccount_id) ? (int)$request->sale_chartaccount_id : 0;
             }
@@ -607,38 +637,7 @@ class ProductServiceController extends Controller
                 }
             }
 
-            // Sinkronisasi otomatis stok master barang dengan stok fisik Gudang Pusat (MBG / Multi-Warehouse)
-            try {
-                $workspace = getActiveWorkSpace();
-                $pusatWarehouse = Warehouse::where('workspace', $workspace)
-                    ->where(function($q) {
-                        $q->where('name', 'like', '%Pusat%')
-                          ->orWhere('name', 'like', '%Koperasi%');
-                    })->first() ?? Warehouse::where('workspace', $workspace)->first();
-
-                if ($pusatWarehouse) {
-                    $pusatStocks = WarehouseProduct::where('warehouse_id', $pusatWarehouse->id)
-                        ->pluck('quantity', 'product_id')
-                        ->toArray();
-
-                    $warehouseProductIds = WarehouseProduct::where('workspace', $workspace)
-                        ->distinct()
-                        ->pluck('product_id')
-                        ->toArray();
-
-                    foreach ($productServices as $ps) {
-                        if (in_array($ps->id, $warehouseProductIds)) {
-                            $actualQty = isset($pusatStocks[$ps->id]) ? (float) $pusatStocks[$ps->id] : 0;
-                            if ((float) $ps->quantity != $actualQty) {
-                                $ps->quantity = $actualQty;
-                                ProductService::where('id', $ps->id)->update(['quantity' => $actualQty]);
-                            }
-                        }
-                    }
-                }
-            } catch (\Throwable $e) {
-                \Log::warning('Stock auto-sync warning: ' . $e->getMessage());
-            }
+            $this->syncWithPusatWarehouse($productServices);
 
             return view('productservice::grid',compact('productServices', 'category','product_type'));
         }

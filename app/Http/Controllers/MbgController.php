@@ -97,11 +97,11 @@ class MbgController extends Controller
     public function createDispatch()
     {
         $workspace = getActiveWorkSpace();
-        $koperasiWarehouse = Warehouse::where('workspace', $workspace)
-            ->where(function($q) {
-                $q->where('name', 'like', '%Pusat%')
-                  ->orWhere('name', 'like', '%Koperasi%');
-            })->first() ?? Warehouse::where('workspace', $workspace)->first();
+        $koperasiWarehouse = function_exists('getPusatWarehouse')
+            ? getPusatWarehouse($workspace)
+            : (Warehouse::where('workspace', $workspace)->where('name', 'like', '%Pusat%')->orderBy('id', 'asc')->first()
+                ?? Warehouse::where('workspace', $workspace)->where('name', 'like', '%Koperasi%')->orderBy('id', 'asc')->first()
+                ?? Warehouse::where('workspace', $workspace)->orderBy('id', 'asc')->first());
 
         $sppgWarehouses = Warehouse::where('workspace', $workspace)
             ->where('id', '!=', $koperasiWarehouse ? $koperasiWarehouse->id : 0)
@@ -114,6 +114,8 @@ class MbgController extends Controller
         $koperasiStocks = [];
         if ($koperasiWarehouse) {
             $koperasiStocks = WarehouseProduct::where('warehouse_id', $koperasiWarehouse->id)
+                ->orderBy('updated_at', 'asc')
+                ->orderBy('id', 'asc')
                 ->pluck('quantity', 'product_id')
                 ->toArray();
         }
@@ -196,15 +198,18 @@ class MbgController extends Controller
                     'created_by' => $creator,
                 ]);
 
-                // Potong stok master barang (ProductService) agar sinkron dengan pengiriman dari Gudang Pusat
-                $koperasiWarehouse = Warehouse::where('workspace', $workspace)
-                    ->where(function($q) {
-                        $q->where('name', 'like', '%Pusat%')
-                          ->orWhere('name', 'like', '%Koperasi%');
-                    })->first() ?? Warehouse::where('workspace', $workspace)->first();
+                // Sinkronkan stok master barang (ProductService) dengan sisa stok fisik di Gudang Pusat
+                $koperasiWarehouse = function_exists('getPusatWarehouse')
+                    ? getPusatWarehouse($workspace)
+                    : Warehouse::where('workspace', $workspace)->orderBy('id', 'asc')->first();
 
-                if (!$koperasiWarehouse || $request->from_warehouse_id == $koperasiWarehouse->id) {
-                    $product->quantity = max(0, (float) $product->quantity - $qty);
+                if ($koperasiWarehouse && $request->from_warehouse_id == $koperasiWarehouse->id) {
+                    $remainingPusat = WarehouseProduct::where('warehouse_id', $koperasiWarehouse->id)
+                        ->where('product_id', $product->id)
+                        ->orderByDesc('updated_at')
+                        ->orderByDesc('id')
+                        ->value('quantity');
+                    $product->quantity = $remainingPusat !== null ? (float) $remainingPusat : 0;
                     $product->save();
                 }
             }
@@ -259,11 +264,9 @@ class MbgController extends Controller
         DB::beginTransaction();
         try {
             // Revert stock transfer
-            $koperasiWarehouse = Warehouse::where('workspace', $dispatch->workspace)
-                ->where(function($q) {
-                    $q->where('name', 'like', '%Pusat%')
-                      ->orWhere('name', 'like', '%Koperasi%');
-                })->first() ?? Warehouse::where('workspace', $dispatch->workspace)->first();
+            $koperasiWarehouse = function_exists('getPusatWarehouse')
+                ? getPusatWarehouse($dispatch->workspace)
+                : Warehouse::where('workspace', $dispatch->workspace)->orderBy('id', 'asc')->first();
 
             foreach ($dispatch->items as $item) {
                 WarehouseTransfer::warehouse_transfer_qty(
@@ -273,11 +276,16 @@ class MbgController extends Controller
                     $item->quantity
                 );
 
-                // Kembalikan stok master barang (ProductService) jika berasal dari Gudang Pusat
-                if (!$koperasiWarehouse || $dispatch->from_warehouse_id == $koperasiWarehouse->id) {
+                // Sinkronkan stok master barang (ProductService) jika berasal dari Gudang Pusat
+                if ($koperasiWarehouse && $dispatch->from_warehouse_id == $koperasiWarehouse->id) {
                     $product = ProductService::find($item->product_id);
                     if ($product) {
-                        $product->quantity = (float) $product->quantity + (float) $item->quantity;
+                        $restoredPusat = WarehouseProduct::where('warehouse_id', $koperasiWarehouse->id)
+                            ->where('product_id', $item->product_id)
+                            ->orderByDesc('updated_at')
+                            ->orderByDesc('id')
+                            ->value('quantity');
+                        $product->quantity = $restoredPusat !== null ? (float) $restoredPusat : 0;
                         $product->save();
                     }
                 }
@@ -314,11 +322,9 @@ class MbgController extends Controller
         }
 
         $usages = $query->orderBy('usage_date', 'desc')->get();
-        $pusatWarehouse = Warehouse::where('workspace', $workspace)
-            ->where(function($q) {
-                $q->where('name', 'like', '%Pusat%')
-                  ->orWhere('name', 'like', '%Koperasi%');
-            })->first();
+        $pusatWarehouse = function_exists('getPusatWarehouse')
+            ? getPusatWarehouse($workspace)
+            : Warehouse::where('workspace', $workspace)->where('name', 'like', '%Pusat%')->orderBy('id', 'asc')->first();
 
         $warehouses = Warehouse::where('workspace', $workspace)
             ->where('id', '!=', $pusatWarehouse ? $pusatWarehouse->id : 0)
@@ -335,11 +341,9 @@ class MbgController extends Controller
         if ($userWhId) {
             $sppgWarehouses = Warehouse::where('id', $userWhId)->get();
         } else {
-            $pusatWarehouse = Warehouse::where('workspace', $workspace)
-                ->where(function($q) {
-                    $q->where('name', 'like', '%Pusat%')
-                      ->orWhere('name', 'like', '%Koperasi%');
-                })->first();
+            $pusatWarehouse = function_exists('getPusatWarehouse')
+                ? getPusatWarehouse($workspace)
+                : Warehouse::where('workspace', $workspace)->where('name', 'like', '%Pusat%')->orderBy('id', 'asc')->first();
 
             $sppgWarehouses = Warehouse::where('workspace', $workspace)
                 ->where('id', '!=', $pusatWarehouse ? $pusatWarehouse->id : 0)
@@ -752,9 +756,9 @@ class MbgController extends Controller
     public function koperasiStock(Request $request)
     {
         $workspace = getActiveWorkSpace();
-        $koperasiWarehouse = Warehouse::where('workspace', $workspace)
-            ->where('name', 'like', '%Koperasi%')
-            ->first() ?? Warehouse::where('workspace', $workspace)->first();
+        $koperasiWarehouse = function_exists('getPusatWarehouse')
+            ? getPusatWarehouse($workspace)
+            : Warehouse::where('workspace', $workspace)->where('name', 'like', '%Pusat%')->orderBy('id', 'asc')->first();
 
         $stockQuery = WarehouseProduct::where('warehouse_id', $koperasiWarehouse ? $koperasiWarehouse->id : 1)
             ->with(['product.unit', 'product.category']);

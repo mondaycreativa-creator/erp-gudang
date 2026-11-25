@@ -39,35 +39,53 @@ class WarehouseTransfer extends Model
       //warehouse transfer
       public static function warehouse_transfer_qty($from_warehouse,$to_warehouse,$product_id,$quantity,$delete=null)
       {
+          $workspace = getActiveWorkSpace();
 
-          $toWarehouse      = WarehouseProduct::where('warehouse_id',$to_warehouse)->where('product_id',$product_id)->first();
-          if(empty($toWarehouse)){
-              if($delete != 'delete')
-              {
+          $toRows = WarehouseProduct::where('warehouse_id', $to_warehouse)
+              ->where('product_id', $product_id)
+              ->orderByDesc('updated_at')
+              ->orderByDesc('id')
+              ->get();
+
+          $toWarehouse = $toRows->first();
+          if (empty($toWarehouse)) {
+              if ($delete != 'delete') {
                   $transfer                = new WarehouseProduct();
                   $transfer->warehouse_id  = $to_warehouse;
                   $transfer->product_id    = $product_id;
                   $transfer->quantity      = $quantity;
-                  $transfer->workspace     = getActiveWorkSpace();
+                  $transfer->workspace     = $workspace;
                   $transfer->created_by    = creatorId();
                   $transfer->save();
               }
-          }else{
-              $toWarehouse->quantity   = $toWarehouse->quantity+$quantity;
-              $toWarehouse->save();
-          }
-          $fromWarehouse               = WarehouseProduct::where('warehouse_id',$from_warehouse)->where('product_id',$product_id)->first();
-          if(!empty($fromWarehouse))
-          {
-              $fromWarehouse->quantity     = ($fromWarehouse->quantity) - ($quantity);
-              if($fromWarehouse->quantity <= 0){
-                  $fromWarehouse->delete();
+          } else {
+              $toWarehouse->quantity = (float) $toWarehouse->quantity + (float) $quantity;
+              if (empty($toWarehouse->workspace)) {
+                  $toWarehouse->workspace = $workspace;
               }
-              else{
+              $toWarehouse->save();
+              foreach ($toRows->slice(1) as $duplicate) {
+                  $duplicate->delete();
+              }
+          }
+
+          $fromRows = WarehouseProduct::where('warehouse_id', $from_warehouse)
+              ->where('product_id', $product_id)
+              ->orderByDesc('updated_at')
+              ->orderByDesc('id')
+              ->get();
+
+          $fromWarehouse = $fromRows->first();
+          if (!empty($fromWarehouse)) {
+              foreach ($fromRows->slice(1) as $duplicate) {
+                  $duplicate->delete();
+              }
+              $fromWarehouse->quantity = (float) $fromWarehouse->quantity - (float) $quantity;
+              if ($fromWarehouse->quantity <= 0) {
+                  $fromWarehouse->delete();
+              } else {
                   $fromWarehouse->save();
               }
           }
-
-
       }
 }

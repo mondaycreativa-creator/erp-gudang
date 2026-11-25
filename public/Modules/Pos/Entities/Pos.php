@@ -439,22 +439,7 @@ class Pos extends Model
     }
     public static function addWarehouseStock($product_id, $quantity, $warehouse_id)
     {
-
-        $product     = WarehouseProduct::where('product_id' , $product_id)->where('warehouse_id' , $warehouse_id)->first();
-
-        if($product){
-            $pro_quantity = $product->quantity;
-            $product_quantity = $pro_quantity + $quantity;
-        }else{
-            $product_quantity = $quantity;
-        }
-
-        $data = WarehouseProduct::updateOrCreate(
-            ['warehouse_id' => $warehouse_id, 'product_id' => $product_id,'created_by' => \Auth::user()->id,'workspace'=>getActiveWorkSpace()],
-            ['warehouse_id' => $warehouse_id, 'product_id' => $product_id, 'quantity' => $product_quantity,'created_by' => \Auth::user()->id,'workspace'=>getActiveWorkSpace()])
-          ;
-
-
+        return \App\Models\Purchase::addWarehouseStock($product_id, $quantity, $warehouse_id);
     }
 
     public static function addProductStock($product_id, $quantity, $type, $description,$type_id)
