@@ -30,12 +30,12 @@
     }
 @endphp
 
-<div class="row justify-content-center">
-    <div class="col-lg-10 col-12">
+<div class="row justify-content-center invoice-outer-row">
+    <div class="col-lg-10 col-12 invoice-outer-col">
         <div class="card shadow-sm border-0 invoice-card" id="print-area">
             <div class="card-body p-3 p-md-4">
                 <!-- Header Kop Faktur -->
-                <div class="row align-items-center border-bottom pb-2 mb-2 invoice-header">
+                <div class="row align-items-center border-bottom pb-2 mb-3 invoice-header">
                     <div class="col-7">
                         <h5 class="fw-bold mb-1 text-dark invoice-company-name">Koperasi Konsumen Samakara Loka Lestari</h5>
                         <p class="text-muted mb-0 invoice-company-sub" style="font-size: 0.8rem;">Desa Kerep RT 01/02 Kecamatan Kemiri Kabupaten Purworejo</p>
@@ -55,35 +55,35 @@
                 </div>
 
                 <!-- Informasi Pelanggan & Nota -->
-                <div class="row mb-2 invoice-info-section">
-                    <div class="col-sm-7 col-7">
+                <div class="row mb-3 align-items-start invoice-info-section">
+                    <div class="col-7">
                         <span class="text-muted d-block invoice-label" style="font-size: 0.75rem;">Kepada / Pelanggan:</span>
                         <h6 class="fw-bold text-dark mb-0 invoice-customer-name">{{ $sppgCustomerTitle }}</h6>
                         <p class="text-muted mb-0 invoice-customer-address" style="font-size: 0.78rem;">{{ $dispatch->toWarehouse ? $dispatch->toWarehouse->address : 'Dapur Pelayanan MBG' }}</p>
                     </div>
-                    <div class="col-sm-5 col-5">
+                    <div class="col-5">
                         <table class="table-sm table-borderless ms-auto invoice-meta-table" style="width: auto; font-size: 0.8rem;">
                             <tr>
-                                <td class="fw-bold pe-2 py-0">Nomor Faktur</td>
+                                <td class="fw-bold pe-2 py-0 text-nowrap">Nomor Faktur</td>
                                 <td class="pe-1 py-0">:</td>
-                                <td class="fw-bold text-dark py-0">{{ $dispatch->dispatch_code }}</td>
+                                <td class="fw-bold text-dark py-0 text-nowrap">{{ $dispatch->dispatch_code }}</td>
                             </tr>
                             <tr>
-                                <td class="fw-bold pe-2 py-0">Tanggal</td>
+                                <td class="fw-bold pe-2 py-0 text-nowrap">Tanggal</td>
                                 <td class="pe-1 py-0">:</td>
-                                <td class="py-0">{{ \Carbon\Carbon::parse($dispatch->delivery_date)->format('d/m/Y') }}</td>
+                                <td class="py-0 text-nowrap">{{ \Carbon\Carbon::parse($dispatch->delivery_date)->format('d/m/Y') }}</td>
                             </tr>
                             <tr>
-                                <td class="fw-bold pe-2 py-0">Jadwal Hari</td>
+                                <td class="fw-bold pe-2 py-0 text-nowrap">Jadwal Hari</td>
                                 <td class="pe-1 py-0">:</td>
-                                <td class="py-0">{{ $dispatch->delivery_day }}</td>
+                                <td class="py-0 text-nowrap">{{ $dispatch->delivery_day }}</td>
                             </tr>
                         </table>
                     </div>
                 </div>
 
                 <!-- Tabel Bahan Makanan / Barang -->
-                <div class="table-responsive mb-2 invoice-table-wrapper">
+                <div class="table-responsive mb-3 invoice-table-wrapper">
                     <table class="table table-bordered table-sm align-middle invoice-table mb-0">
                         <thead class="table-light text-center border-dark">
                             <tr>
@@ -98,40 +98,40 @@
                         <tbody>
                             @foreach($dispatch->items as $idx => $item)
                                 <tr>
-                                    <td class="text-center">{{ $idx + 1 }}</td>
+                                    <td class="text-center text-nowrap">{{ $idx + 1 }}</td>
                                     <td>
                                         <div class="invoice-item-name fw-bold">{{ $item->product ? $item->product->name : 'Item' }}</div>
                                         @if($item->product && $item->product->sku)
                                             <div class="text-muted invoice-item-sku">Kode: {{ $item->product->sku }}</div>
                                         @endif
                                     </td>
-                                    <td class="text-center fw-bold">{{ number_format($item->quantity, 2, ',', '.') }}</td>
-                                    <td class="text-center">{{ $item->product && $item->product->unit ? $item->product->unit->name : '-' }}</td>
-                                    <td class="text-end">Rp {{ number_format($item->sale_price, 0, ',', '.') }}</td>
-                                    <td class="text-end fw-bold">Rp {{ number_format($item->subtotal_price, 0, ',', '.') }}</td>
+                                    <td class="text-center fw-bold text-nowrap">{{ number_format($item->quantity, 2, ',', '.') }}</td>
+                                    <td class="text-center text-nowrap">{{ $item->product && $item->product->unit ? $item->product->unit->name : '-' }}</td>
+                                    <td class="text-end text-nowrap">Rp {{ number_format($item->sale_price, 0, ',', '.') }}</td>
+                                    <td class="text-end fw-bold text-nowrap">Rp {{ number_format($item->subtotal_price, 0, ',', '.') }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
                         <tfoot class="border-top border-dark">
-                            <tr>
+                            <tr class="table-light">
                                 <th colspan="5" class="text-end fw-bold py-1">TOTAL PENJUALAN :</th>
-                                <th class="text-end fw-bold fs-6 text-dark py-1">Rp {{ number_format($dispatch->total_price, 0, ',', '.') }}</th>
+                                <th class="text-end fw-bold text-dark py-1 text-nowrap invoice-total-amount">Rp {{ number_format($dispatch->total_price, 0, ',', '.') }}</th>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
 
                 <!-- Terbilang, Jatuh Tempo & Keterangan -->
-                <div class="row mb-2 invoice-footer-note">
+                <div class="row mb-3 invoice-footer-note">
                     <div class="col-12">
                         <table class="table-sm table-borderless mb-0 invoice-note-table" style="font-size: 0.78rem;">
                             <tr>
-                                <td style="width: 95px;" class="fw-bold align-top py-0">Terbilang</td>
+                                <td style="width: 95px;" class="fw-bold align-top py-0 text-nowrap">Terbilang</td>
                                 <td style="width: 12px;" class="align-top py-0">:</td>
                                 <td class="fw-bold fst-italic text-dark py-0">{{ terbilang($dispatch->total_price) }} Rupiah</td>
                             </tr>
                             <tr>
-                                <td class="fw-bold align-top py-0">Jatuh Tempo</td>
+                                <td class="fw-bold align-top py-0 text-nowrap">Jatuh Tempo</td>
                                 <td class="align-top py-0">:</td>
                                 <td class="py-0">
                                     {{ $dispatch->due_date ? \Carbon\Carbon::parse($dispatch->due_date)->format('d/m/Y') : \Carbon\Carbon::parse($dispatch->delivery_date)->addDays(7)->format('d/m/Y') }}
@@ -139,7 +139,7 @@
                             </tr>
                             @if($dispatch->notes)
                             <tr>
-                                <td class="fw-bold align-top py-0">Keterangan</td>
+                                <td class="fw-bold align-top py-0 text-nowrap">Keterangan</td>
                                 <td class="align-top py-0">:</td>
                                 <td class="text-muted py-0">{{ $dispatch->notes }}</td>
                             </tr>
@@ -149,16 +149,16 @@
                 </div>
 
                 <!-- Tanda Tangan (Petugas & Pelanggan) -->
-                <div class="row pt-1 text-center invoice-signatures">
+                <div class="row pt-2 text-center invoice-signatures">
                     <div class="col-6">
-                        <p class="signature-title mb-4 pb-2">Petugas,</p>
-                        <p class="fw-bold mb-0 signature-line">( &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; )</p>
-                        <small class="text-muted d-block mt-0 signature-role">Bagian Gudang Koperasi</small>
+                        <p class="signature-title mb-5">Petugas,</p>
+                        <div class="fw-bold signature-line"><span>(</span><span>)</span></div>
+                        <small class="text-muted d-block mt-1 signature-role">Bagian Gudang Koperasi</small>
                     </div>
                     <div class="col-6">
-                        <p class="signature-title mb-4 pb-2">Pelanggan,</p>
-                        <p class="fw-bold mb-0 signature-line">( &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; )</p>
-                        <small class="text-muted d-block mt-0 signature-role">Admin / Juru Masak SPPG</small>
+                        <p class="signature-title mb-5">Pelanggan,</p>
+                        <div class="fw-bold signature-line"><span>(</span><span>)</span></div>
+                        <small class="text-muted d-block mt-1 signature-role">Admin / Juru Masak SPPG</small>
                     </div>
                 </div>
 
@@ -196,24 +196,40 @@
 
 <style>
 /* CSS Layar (Screen) */
-.invoice-table th, .invoice-table td {
-    padding: 3px 6px;
-    font-size: 0.82rem;
+#print-area .invoice-table-wrapper {
+    margin: 0 !important;
+    width: 100% !important;
+}
+#print-area .invoice-table th,
+#print-area .invoice-table td {
+    padding: 6px 8px;
+    font-size: 0.84rem;
+    border-color: #dee2e6;
+}
+#print-area .invoice-table > thead > tr > th {
+    border-top: 1px solid #212529;
 }
 .invoice-item-name {
-    font-size: 0.84rem;
-    line-height: 1.2;
+    font-size: 0.85rem;
+    line-height: 1.25;
 }
 .invoice-item-sku {
     font-size: 0.72rem;
-    line-height: 1.1;
+    line-height: 1.15;
+}
+.signature-line {
+    display: flex;
+    justify-content: space-between;
+    width: 175px;
+    margin: 0 auto;
+    font-size: 0.85rem;
 }
 
-/* CSS Cetak (Print) - Disesuaikan agar 25 barang muat rapi dalam 1 lembar A4 */
+/* CSS Cetak (Print) - Disesuaikan agar hingga 25 barang muat rapi dalam 1 lembar A4 */
 @media print {
     @page {
         size: A4 portrait;
-        margin: 5mm 8mm 4mm 8mm;
+        margin: 8mm 10mm 8mm 10mm;
     }
     html, body {
         background-color: #fff !important;
@@ -221,16 +237,42 @@
         color: #000 !important;
         margin: 0 !important;
         padding: 0 !important;
+        width: 100% !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
-    .dash-header, .dash-sidebar, .page-header, .d-print-none, footer {
+    .dash-header,
+    .dash-sidebar,
+    .page-header,
+    .d-print-none,
+    .dash-footer,
+    .loader-bg,
+    .toast,
+    footer {
         display: none !important;
     }
-    .pc-container, .main-content {
+    .dash-container,
+    .dash-content,
+    .pc-container,
+    .main-content {
+        position: static !important;
+        top: 0 !important;
+        left: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
+        max-width: 100% !important;
+        min-height: auto !important;
+    }
+    .invoice-outer-row {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .invoice-outer-col {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+        padding: 0 !important;
     }
     .invoice-card {
         border: none !important;
@@ -238,6 +280,7 @@
         margin: 0 !important;
         padding: 0 !important;
         width: 100% !important;
+        background: transparent !important;
     }
     .invoice-card .card-body {
         padding: 0 !important;
@@ -245,134 +288,169 @@
 
     /* Header Kop */
     .invoice-header {
-        padding-bottom: 2px !important;
-        margin-bottom: 4px !important;
+        padding-bottom: 6px !important;
+        margin-bottom: 8px !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
         border-bottom: 1.5px solid #000 !important;
     }
+    .invoice-header > [class*="col-"]:first-child {
+        padding-left: 0 !important;
+    }
+    .invoice-header > [class*="col-"]:last-child {
+        padding-right: 0 !important;
+    }
     .invoice-company-name {
-        font-size: 11pt !important;
-        line-height: 1.1 !important;
-        margin-bottom: 1px !important;
+        font-size: 11.5pt !important;
+        line-height: 1.15 !important;
+        margin-bottom: 2px !important;
         color: #000 !important;
     }
     .invoice-company-sub {
         font-size: 7.5pt !important;
-        line-height: 1.1 !important;
+        line-height: 1.2 !important;
         color: #333 !important;
     }
     .invoice-title {
-        font-size: 12pt !important;
-        line-height: 1.1 !important;
+        font-size: 12.5pt !important;
+        line-height: 1.15 !important;
         letter-spacing: 0.5px !important;
         color: #000 !important;
     }
 
     /* Info Pelanggan & Meta */
     .invoice-info-section {
-        margin-bottom: 4px !important;
+        margin-bottom: 8px !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    .invoice-info-section > [class*="col-"]:first-child {
+        padding-left: 0 !important;
+    }
+    .invoice-info-section > [class*="col-"]:last-child {
+        padding-right: 0 !important;
     }
     .invoice-label {
-        font-size: 7pt !important;
-        line-height: 1.1 !important;
+        font-size: 7.5pt !important;
+        line-height: 1.2 !important;
+        margin-bottom: 1px !important;
+        color: #333 !important;
     }
     .invoice-customer-name {
         font-size: 9.5pt !important;
-        line-height: 1.1 !important;
+        line-height: 1.2 !important;
+        margin-bottom: 1px !important;
         color: #000 !important;
     }
     .invoice-customer-address {
         font-size: 7.5pt !important;
-        line-height: 1.1 !important;
+        line-height: 1.2 !important;
         color: #333 !important;
     }
+    .invoice-meta-table {
+        margin-left: auto !important;
+    }
     .invoice-meta-table td {
-        font-size: 7.5pt !important;
-        line-height: 1.1 !important;
+        font-size: 7.8pt !important;
+        line-height: 1.25 !important;
         padding: 0 2px !important;
         color: #000 !important;
     }
 
     /* Tabel Barang */
-    .invoice-table-wrapper {
-        margin-bottom: 4px !important;
+    #print-area .invoice-table-wrapper {
+        margin: 0 0 6px 0 !important;
+        width: 100% !important;
         overflow: visible !important;
     }
-    .invoice-table {
+    #print-area .invoice-table {
         width: 100% !important;
         border: 1px solid #000 !important;
         border-collapse: collapse !important;
+        margin: 0 !important;
     }
-    .invoice-table th, .invoice-table td {
+    #print-area .invoice-table th,
+    #print-area .invoice-table td {
         border: 1px solid #000 !important;
         color: #000 !important;
-        padding: 1.5px 3px !important;
+        padding: 2.5px 5px !important;
         font-size: 8pt !important;
-        line-height: 1.15 !important;
+        line-height: 1.2 !important;
     }
-    .invoice-table thead {
+    #print-area .invoice-table thead {
+        display: table-header-group !important;
         background-color: #f1f1f1 !important;
         -webkit-print-color-adjust: exact !important;
     }
-    .invoice-table thead th {
+    #print-area .invoice-table > thead > tr > th {
+        border-top: 1px solid #000 !important;
         font-size: 8pt !important;
-        padding: 2px 3px !important;
+        padding: 3px 5px !important;
         font-weight: bold !important;
+        background-color: #f1f1f1 !important;
     }
-    .invoice-table tbody tr {
+    #print-area .invoice-table tbody tr {
         page-break-inside: avoid !important;
         page-break-after: auto !important;
     }
     .invoice-item-name {
         font-size: 8pt !important;
         font-weight: 600 !important;
-        line-height: 1.1 !important;
+        line-height: 1.15 !important;
     }
     .invoice-item-sku {
         font-size: 6.8pt !important;
-        line-height: 1 !important;
+        line-height: 1.05 !important;
         color: #444 !important;
         margin-top: 1px !important;
     }
-    .invoice-table tfoot {
+    #print-area .invoice-table tfoot {
         display: table-row-group !important;
     }
-    .invoice-table tfoot th {
+    #print-area .invoice-table tfoot th {
         border-top: 1.5px solid #000 !important;
         font-size: 8.5pt !important;
-        padding: 2px 4px !important;
+        padding: 3px 5px !important;
+        background-color: #f8f9fa !important;
     }
 
     /* Footer / Terbilang / Keterangan */
     .invoice-footer-note {
-        margin-bottom: 4px !important;
+        margin: 0 0 8px 0 !important;
         page-break-inside: avoid !important;
     }
+    .invoice-footer-note > [class*="col-"] {
+        padding: 0 !important;
+    }
     .invoice-note-table td {
-        font-size: 7.5pt !important;
-        line-height: 1.15 !important;
+        font-size: 7.8pt !important;
+        line-height: 1.25 !important;
         padding: 0 2px !important;
         color: #000 !important;
     }
 
     /* Tanda Tangan */
     .invoice-signatures {
-        padding-top: 2px !important;
+        padding-top: 4px !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
         page-break-inside: avoid !important;
     }
     .signature-title {
         font-size: 8pt !important;
-        margin-bottom: 28px !important;
+        margin-bottom: 34px !important;
         padding-bottom: 0 !important;
         color: #000 !important;
     }
     .signature-line {
         font-size: 8pt !important;
-        margin-bottom: 0 !important;
+        width: 170px !important;
+        margin: 0 auto !important;
         color: #000 !important;
     }
     .signature-role {
         font-size: 7pt !important;
-        margin-top: 1px !important;
+        margin-top: 2px !important;
         color: #333 !important;
     }
 }
